@@ -4,7 +4,7 @@ import :stream;
 
 #ifdef HARDENED
 #define BOUND_CHECK pre(index < _size)
-#define RESERVE_CHECK pre(new_capacity > 0)
+#define RESERVE_CHECK pre(new_capacity > -1)
 #else
 #define BOUND_CHECK
 #define RESERVE_CHECK

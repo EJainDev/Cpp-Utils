@@ -6,12 +6,14 @@ import std;
 
 export namespace cpputils::data_structures {
 
-struct Faketypename {
-  void operator()() const {}
-};
-
 template <typename T, typename Fn, typename Child>
 struct Filter;
+
+template <typename T>
+concept FilterFn = requires(T val) {
+  { val(std::declval<T&&>()) } -> std::convertible_to<bool>;
+}
+};
 
 template <typename T, typename Fn, typename Child>
 struct Map;
@@ -39,8 +41,11 @@ struct NewType<Current, NewChild, int> {
                                                                 NewChild>;
 };
 
-template <typename T, typename Fn, typename Child>
+template <typename T, FilterFn Fn, typename Child>
 struct Filter {
+  template <typename U>
+  concept SelfType = requires(U val) { std::same_as<Fn, val.filter_fn>; }
+
   Fn filter_fn;
   Child child;
 
@@ -52,7 +57,7 @@ struct Filter {
 
   void reserve(int capacity) { child.reserve(capacity); }
 
-  template <typename FilterType, typename... ForwardArgs>
+  template <SelfType FilterType, typename... ForwardArgs>
   Filter of(FilterType&& old, ForwardArgs&&... args) {
     if constexpr (std::is_same_v<Child, int>) {
       return Filter{std::forward<ForwardArgs>(args)...};
