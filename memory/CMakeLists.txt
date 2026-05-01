@@ -12,3 +12,5 @@ target_sources(
          "Memory.cxx"
          "allocators/SimpleAllocator.cxx"
          "allocators/SimplePool.cxx")
+
+add_subdirectory(tests)
