@@ -1,2 +1,5 @@
-add_executable(MemoryTests Memory.cpp)
-target_link_libraries(MemoryTests PRIVATE cpputils_memory GTest::gtest_main)
+add_executable(MemoryTestsExecutable Memory.cpp)
+target_link_libraries(MemoryTestsExecutable PRIVATE cpputils_memory
+                                                    cpputils_testing)
+
+add_test(NAME MemoryTests COMMAND MemoryTestsExecutable)

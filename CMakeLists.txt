@@ -18,6 +18,7 @@ if(ENABLE_TESTING)
 endif()
 
 # add_subdirectory(refl_utils) add_subdirectory(data_structures)
+add_subdirectory(testing)
 add_subdirectory(memory)
 
 # add_executable(test test.cpp) target_link_libraries(test PRIVATE
