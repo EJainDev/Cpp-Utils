@@ -6,19 +6,18 @@ import std;
 template <typename T>
 struct Allocator {
   struct Data {
-    std::size_t alloc_size;
-    std::size_t dealloc_size;
+    int alloc_count;
   };
 
   std::shared_ptr<Data> data = std::make_shared<Data>();
 
   std::optional<T*> alloc(std::size_t size) {
-    data->alloc_size += size;
+    ++data->alloc_count;
     return new T[size / sizeof(T)];
   }
 
   void dealloc(T* ptr) {
-    data->dealloc_size += sizeof(T);
+    --data->alloc_count += sizeof(T);
     delete[] ptr;
   }
 };
@@ -30,8 +29,7 @@ class MemoryTests {
     {
       cpputils::memory::Memory<int, decltype(allocator)>::init(allocator, 1);
     }
-    cpputils::testing::assertEqual(4, allocator.data->alloc_size);
-    cpputils::testing::assertEqual(4, allocator.data->dealloc_size);
+    cpputils::testing::assertEqual(0, allocator.data->alloc_count);
   }
 };
 
