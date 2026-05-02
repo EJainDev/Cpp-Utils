@@ -3,6 +3,20 @@ export module cpputils.testing;
 import std;
 
 namespace cpputils::testing {
+// Helper functions to extract specific vectors from types/reflections
+template <typename T>
+consteval auto getNonstaticDataMembers() {
+  return std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::current());
+}
+
+template <typename T>
+consteval auto getMembers() {
+  return std::meta::members_of(^^T, std::meta::access_context::current());
+}
+
+consteval auto getAnnotations(std::meta::info member) { return std::meta::annotations_of(member); }
+
+// Functions for implementing the tuple type for parameterized tests
 template <std::size_t I>
 struct member_name {
   static constexpr auto value = []() {
@@ -20,18 +34,6 @@ consteval auto make_specs(std::index_sequence<Is...>) {
   return std::vector<std::meta::info>{
       std::meta::data_member_spec(^^Ts, {
                                             .name = member_name<Is>::value.data()})...};
-}
-
-template <std::size_t N, typename F>
-constexpr auto with_indices(const F f) -> decltype(auto) {
-  return [&]<std::size_t... Is>(std::index_sequence<Is...>) -> decltype(auto) {
-    return f(std::integral_constant<std::size_t, Is>{}...);
-  }(std::make_index_sequence<N>{});
-}
-
-template <typename T>
-consteval auto getNonstaticDataMembers() {
-  return std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::current());
 }
 
 export template <typename... Ts>
@@ -57,7 +59,19 @@ struct Tuple {
 export template <typename... Ts>
 Tuple(Ts...) -> Tuple<Ts...>;
 
-class Error : std::exception {
+export consteval auto tuple(auto... args) { return Tuple<decltype(args)...>{.s = {args...}}; }
+
+// Helper function to call a test with all the parameters in a tuple
+template <std::size_t N, typename F>
+constexpr auto with_indices(const F f) -> decltype(auto) {
+  return [&]<std::size_t... Is>(std::index_sequence<Is...>) -> decltype(auto) {
+    return f(std::integral_constant<std::size_t, Is>{}...);
+  }(std::make_index_sequence<N>{});
+}
+
+// An exception class for test failures, to distinguish from other exceptions. It does not inherit
+// std::exception to prevent the user from catching it as frequently
+class Error {
  public:
   explicit Error(std::string message) : message_(std::move(message)) {}
 
@@ -67,6 +81,7 @@ class Error : std::exception {
   std::string message_;
 };
 
+// Different annotations recognized by the library
 export template <typename T = int>
 struct BeforeEach {};
 export template <typename T = int>
@@ -87,13 +102,7 @@ struct Parameterize {
   TupleType parameters[N];
 };
 
-template <typename T>
-consteval auto getMembers() {
-  return std::meta::members_of(^^T, std::meta::access_context::current());
-}
-
-consteval auto getAnnotations(std::meta::info member) { return std::meta::annotations_of(member); }
-
+// Gets all required information from the testing class
 template <typename T>
 consteval auto getTests() {
   static constexpr auto members = std::define_static_array(getMembers<T>());
@@ -141,6 +150,7 @@ consteval auto getTests() {
       size);
 }
 
+// Assert statements that can be called
 export void assertEqual(auto expected, auto actual) {
   if (expected != actual) {
     throw Error("Assertion failed: expected " + std::to_string(expected) + ", got " +
@@ -148,6 +158,7 @@ export void assertEqual(auto expected, auto actual) {
   }
 }
 
+// Finds and calls all tests in a suite
 export template <typename T>
   requires(std::is_class_v<T>)
 void test(T suite = {}) {
@@ -165,6 +176,8 @@ void test(T suite = {}) {
   static constexpr auto after_all_func = std::get<8>(result);
   static constexpr auto size = tests.size();
 
+  // The BeforeAll function is run once before any tests, and if it fails, the entire suite is
+  // aborted
   if constexpr (has_before_all) {
     std::cout << "Running BeforeAll setup for suite " << std::meta::identifier_of(^^T) << '\n';
     try {
@@ -205,6 +218,8 @@ void test(T suite = {}) {
     template for (constexpr auto a : annotations) {
       constexpr auto t = std::meta::template_of(std::meta::type_of(a));
 
+      // Parameterized tests are run in a loop for each set of parameters so they must use a
+      // separate calling mechanism
       if constexpr (t == ^^Parameterize) {
         parameterized = true;
 
@@ -225,6 +240,16 @@ void test(T suite = {}) {
         for (const auto param :
              std::meta::extract<typename[:std::meta::substitute(^^Parameterize, template_args):]>(a)
                  .parameters) {
+          if constexpr (has_before_each) {
+            try {
+              suite.[:before_each_func:]();
+            } catch (...) {
+              std::cout << "BeforeEach function failed for test " << std::meta::identifier_of(test)
+                        << ", skipping...\n";
+              continue;  // Skip the test if setup fails
+            }
+          }
+
           template for (constexpr auto m : param_members) {
             std::cout << "\t- {" << std::to_string(param.s.[:m:]);
           }
@@ -248,6 +273,15 @@ void test(T suite = {}) {
           } catch (...) {
             std::cout << "Test " << std::meta::identifier_of(test)
                       << " failed with unknown error\n";
+          }
+
+          if constexpr (has_after_each) {
+            try {
+              suite.[:after_each_func:]();
+            } catch (...) {
+              std::cout << "AfterEach function failed for test " << std::meta::identifier_of(test)
+                        << '\n';
+            }
           }
         }
       }
@@ -294,16 +328,16 @@ void test(T suite = {}) {
                   << '\n';
       }
     }
+  }
 
-    if constexpr (has_after_all) {
-      std::cout << "Running AfterAll teardown for suite " << std::meta::identifier_of(^^T) << '\n';
-      try {
-        suite.[:after_all_func:]();
-      } catch (const std::exception& e) {
-        std::cout << "AfterAll teardown failed with exception: " << e.what() << '\n';
-      } catch (...) {
-        std::cout << "AfterAll teardown failed with unknown error\n";
-      }
+  if constexpr (has_after_all) {
+    std::cout << "Running AfterAll teardown for suite " << std::meta::identifier_of(^^T) << '\n';
+    try {
+      suite.[:after_all_func:]();
+    } catch (const std::exception& e) {
+      std::cout << "AfterAll teardown failed with exception: " << e.what() << '\n';
+    } catch (...) {
+      std::cout << "AfterAll teardown failed with unknown error\n";
     }
   }
 }
