@@ -26,8 +26,10 @@ struct Allocator {
 
 class MemoryTests {
  public:
-  [[= Test{}]][[= Parameterize<3, int>{Tuple<int>{1}, Tuple<int>{5}, Tuple<int>{10}}]] void
-      basicSingleAlloc(int size = 1) {
+  [[= Test{}]] void defaultConstructor() { cpputils::memory::Memory<int> mem; }
+
+  [[= Test{}]][[= Parameterize<3, int>{tuple(1), tuple(5), tuple(10)}]] void basicSingleAlloc(
+      int size = 1) {
     Allocator<int> allocator;
     {
       cpputils::memory::Memory<int, decltype(allocator)>::init(allocator, size);
@@ -35,17 +37,15 @@ class MemoryTests {
     cpputils::testing::assertEqual(0, allocator.data->alloc_count);
   }
 
-  [[= cpputils::testing::Test{}]] void forcedDealloc() {
+  [[= cpputils::testing::Test{}]][[= Parameterize<3, int>{tuple(1), tuple(5), tuple(10)}]] void
+      forcedDealloc(int size = 1) {
     Allocator<int> allocator;
     {
-      auto mem = cpputils::memory::Memory<int, decltype(allocator)>::init(allocator, 1);
+      auto mem = cpputils::memory::Memory<int, decltype(allocator)>::init(allocator, size);
       mem->dealloc();
     }
     cpputils::testing::assertEqual(0, allocator.data->alloc_count);
   }
 };
 
-int main(int argc, char** argv) {
-  cpputils::testing::test<MemoryTests>(argc, argv);
-  return 0;
-}
+int main(int argc, char** argv) { return cpputils::testing::test<MemoryTests>(argc, argv); }

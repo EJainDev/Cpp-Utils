@@ -1,21 +1,12 @@
 export module cpputils.testing;
 
+import cpputils.refl_utils;
+
 import std;
 
+using namespace cpputils::refl_utils;
+
 namespace cpputils::testing {
-// Helper functions to extract specific vectors from types/reflections
-template <typename T>
-consteval auto getNonstaticDataMembers() {
-  return std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::current());
-}
-
-template <typename T>
-consteval auto getMembers() {
-  return std::meta::members_of(^^T, std::meta::access_context::current());
-}
-
-consteval auto getAnnotations(std::meta::info member) { return std::meta::annotations_of(member); }
-
 // Functions for implementing the tuple type for parameterized tests
 template <std::size_t I>
 struct member_name {
@@ -74,6 +65,18 @@ constexpr auto with_indices(const F f) -> decltype(auto) {
 class Error {
  public:
   explicit Error(std::string message) : message_(std::move(message)) {}
+
+  const std::string& message() const { return message_; }
+
+ private:
+  std::string message_;
+};
+
+// An exception class for abort messages that should not be treated as test failures (e.g. failed
+// setup)
+class Abort {
+ public:
+  explicit Abort(std::string message) : message_(std::move(message)) {}
 
   const std::string& message() const { return message_; }
 
@@ -153,15 +156,231 @@ consteval auto getTests() {
 // Assert statements that can be called
 export void assertEqual(auto expected, auto actual) {
   if (expected != actual) {
-    throw Error("Assertion failed: expected " + std::to_string(expected) + ", got " +
-                std::to_string(actual));
+    throw Error("Assertion failed: expected " + format(expected) + ", got " + format(actual));
+  }
+}
+
+export void assertNotEqual(auto expected, auto actual) {
+  if (expected == actual) {
+    throw Error("Assertion failed: expected not equal to " + format(expected) + ", got " +
+                format(actual));
+  }
+}
+
+export void assertTrue(auto value) {
+  if (!value) {
+    throw Error("Assertion failed: expected true, got false for " + format(value));
+  }
+}
+
+export void assertFalse(auto value) {
+  if (value) {
+    throw Error("Assertion failed: expected false, got true for " + format(value));
+  }
+}
+
+export void assertNear(auto expected, auto actual, auto tol) {
+  if (!(std::abs(expected - actual) <= tol)) {
+    throw Error("Assertion failed: expected " + format(expected) + " ≈ " + format(actual) +
+                " within " + format(tol));
+  }
+}
+
+export void assertLess(auto a, auto b) {
+  if (!(a < b)) {
+    throw Error("Assertion failed: expected " + format(a) + " < " + format(b));
+  }
+}
+
+export void assertLessEqual(auto a, auto b) {
+  if (!(a <= b)) {
+    throw Error("Assertion failed: expected " + format(a) + " <= " + format(b));
+  }
+}
+
+export void assertGreater(auto a, auto b) {
+  if (!(a > b)) {
+    throw Error("Assertion failed: expected " + format(a) + " > " + format(b));
+  }
+}
+
+export void assertGreaterEqual(auto a, auto b) {
+  if (!(a >= b)) {
+    throw Error("Assertion failed: expected " + format(a) + " >= " + format(b));
+  }
+}
+
+export void assertContains(auto const& container, auto const& value) {
+  if (std::find(std::begin(container), std::end(container), value) == std::end(container)) {
+    throw Error("Assertion failed: container does not contain value " + format(value));
+  }
+}
+
+export template <typename E = std::exception>
+void assertThrows(auto func) {
+  try {
+    func();
+    throw Error("Assertion failed: expected exception, none thrown");
+  } catch (const E&) {
+    return;
+  } catch (...) {
+    throw Error("Assertion failed: thrown exception type did not match expected");
+  }
+}
+
+export template <typename E = std::exception>
+void assertThrowsMessage(auto func, std::string_view msg_substr) {
+  try {
+    func();
+    throw Error("Assertion failed: expected exception, none thrown");
+  } catch (const E& e) {
+    if (std::string_view(e.what()).find(msg_substr) == std::string_view::npos) {
+      throw Error("Assertion failed: exception message does not contain " +
+                  std::string(msg_substr));
+    }
+  } catch (...) {
+    throw Error("Assertion failed: thrown exception type did not match expected");
+  }
+}
+
+export template <typename E>
+void assertThrowsExact(auto func) {
+  try {
+    func();
+    throw Error("Assertion failed: expected exception, none thrown");
+  } catch (...) {
+    auto ep = std::current_exception();
+    try {
+      std::rethrow_exception(ep);
+    } catch (const E& e) {
+      if (typeid(e) != typeid(E)) {
+        throw Error(std::string("Assertion failed: expected exact exception type ") +
+                    typeid(E).name() + ", got " + typeid(e).name());
+      }
+      return;  // exact match
+    } catch (...) {
+      throw Error("Assertion failed: thrown exception type did not match expected");
+    }
+  }
+}
+
+// Expect statements that can be called
+export void expectEqual(auto expected, auto actual) {
+  if (expected != actual) {
+    throw Abort("Expectation failed: expected " + format(expected) + ", got " + format(actual));
+  }
+}
+
+export void expectNotEqual(auto expected, auto actual) {
+  if (expected == actual) {
+    throw Abort("Expectation failed: expected not equal to " + format(expected) + ", got " +
+                format(actual));
+  }
+}
+
+export void expectTrue(auto value) {
+  if (!value) {
+    throw Abort("Expectation failed: expected true, got false for " + format(value));
+  }
+}
+
+export void expectFalse(auto value) {
+  if (value) {
+    throw Abort("Expectation failed: expected false, got true for " + format(value));
+  }
+}
+
+export void expectNear(auto expected, auto actual, auto tol) {
+  if (!(std::abs(expected - actual) <= tol)) {
+    throw Abort("Expectation failed: expected " + format(expected) + " ≈ " + format(actual) +
+                " within " + format(tol));
+  }
+}
+
+export void expectLess(auto a, auto b) {
+  if (!(a < b)) {
+    throw Abort("Expectation failed: expected " + format(a) + " < " + format(b));
+  }
+}
+
+export void expectLessEqual(auto a, auto b) {
+  if (!(a <= b)) {
+    throw Abort("Expectation failed: expected " + format(a) + " <= " + format(b));
+  }
+}
+
+export void expectGreater(auto a, auto b) {
+  if (!(a > b)) {
+    throw Abort("Expectation failed: expected " + format(a) + " > " + format(b));
+  }
+}
+
+export void expectGreaterEqual(auto a, auto b) {
+  if (!(a >= b)) {
+    throw Abort("Expectation failed: expected " + format(a) + " >= " + format(b));
+  }
+}
+
+export void expectContains(auto const& container, auto const& value) {
+  if (std::find(std::begin(container), std::end(container), value) == std::end(container)) {
+    throw Abort("Expectation failed: container does not contain value " + format(value));
+  }
+}
+
+export template <typename E = std::exception>
+void expectThrows(auto func) {
+  try {
+    func();
+    throw Abort("Expectation failed: expected exception, none thrown");
+  } catch (const E&) {
+    return;
+  } catch (...) {
+    throw Abort("Expectation failed: thrown exception type did not match expected");
+  }
+}
+
+export template <typename E = std::exception>
+void expectThrowsMessage(auto func, std::string_view msg_substr) {
+  try {
+    func();
+    throw Abort("Expectation failed: expected exception, none thrown");
+  } catch (const E& e) {
+    if (std::string_view(e.what()).find(msg_substr) == std::string_view::npos) {
+      throw Abort("Expectation failed: exception message does not contain " +
+                  std::string(msg_substr));
+    }
+  } catch (...) {
+    throw Abort("Expectation failed: thrown exception type did not match expected");
+  }
+}
+
+export template <typename E>
+void expectThrowsExact(auto func) {
+  try {
+    func();
+    throw Abort("Expectation failed: expected exception, none thrown");
+  } catch (...) {
+    auto ep = std::current_exception();
+    try {
+      std::rethrow_exception(ep);
+    } catch (const E& e) {
+      if (typeid(e) != typeid(E)) {
+        throw Abort(std::string("Expectation failed: expected exact exception type ") +
+                    typeid(E).name() + ", got " + typeid(e).name());
+      }
+      return;  // exact match
+    } catch (...) {
+      throw Abort("Expectation failed: thrown exception type did not match expected");
+    }
   }
 }
 
 // Finds and calls all tests in a suite
 export template <typename T>
   requires(std::is_class_v<T>)
-void test(int argc, char** argv, T suite = {}) {
+int test(int argc, char** argv, T suite = {}) {
+  int status_code = 0;
+
   static constexpr auto result = getTests<T>();
 
   // Manually unpack the tuple
@@ -186,7 +405,7 @@ void test(int argc, char** argv, T suite = {}) {
       template for (constexpr auto test : tests) {
         std::cout << "  " << std::meta::identifier_of(test) << '\n';
       }
-      return;
+      return 0;
     } else {
       test_name = arg;
     }
@@ -201,11 +420,11 @@ void test(int argc, char** argv, T suite = {}) {
     } catch (const std::exception& e) {
       std::cout << "BeforeAll setup failed with exception: " << e.what() << ", aborting test suite "
                 << std::meta::identifier_of(^^T) << '\n';
-      return;  // Abort the entire test suite if BeforeAll setup fails
+      return 1;  // Abort the entire test suite if BeforeAll setup fails
     } catch (...) {
       std::cout << "BeforeAll setup failed with unknown error, aborting test suite "
                 << std::meta::identifier_of(^^T) << '\n';
-      return;  // Abort the entire test suite if BeforeAll setup fails
+      return 1;  // Abort the entire test suite if BeforeAll setup fails
     }
   }
 
@@ -285,12 +504,19 @@ void test(int argc, char** argv, T suite = {}) {
           } catch (const Error& e) {
             std::cout << "Test " << std::meta::identifier_of(test)
                       << " failed with error: " << e.message() << '\n';
+            status_code = 1;
+          } catch (const Abort& e) {
+            std::cout << "Test " << std::meta::identifier_of(test)
+                      << " aborted with message: " << e.message() << '\n';
+            status_code = 1;
           } catch (const std::exception& e) {
             std::cout << "Test " << std::meta::identifier_of(test)
                       << " failed with (uncaught) exception message: " << e.what() << '\n';
+            status_code = 1;
           } catch (...) {
             std::cout << "Test " << std::meta::identifier_of(test)
                       << " failed with unknown error\n";
+            status_code = 1;
           }
 
           if constexpr (has_after_each) {
@@ -331,11 +557,18 @@ void test(int argc, char** argv, T suite = {}) {
     } catch (const Error& e) {
       std::cout << "Test " << std::meta::identifier_of(test)
                 << " failed with error: " << e.message() << '\n';
+      status_code = 1;
+    } catch (const Abort& e) {
+      std::cout << "Test " << std::meta::identifier_of(test)
+                << " aborted with message: " << e.message() << '\n';
+      status_code = 1;
     } catch (const std::exception& e) {
       std::cout << "Test " << std::meta::identifier_of(test)
                 << " failed with (uncaught) exception message: " << e.what() << '\n';
+      status_code = 1;
     } catch (...) {
       std::cout << "Test " << std::meta::identifier_of(test) << " failed with unknown error\n";
+      status_code = 1;
     }
 
     if constexpr (has_after_each) {
@@ -358,5 +591,7 @@ void test(int argc, char** argv, T suite = {}) {
       std::cout << "AfterAll teardown failed with unknown error\n";
     }
   }
+
+  return status_code;
 }
 }  // namespace cpputils::testing

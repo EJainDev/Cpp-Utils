@@ -9,6 +9,7 @@ target_sources(
          "${CMAKE_CURRENT_SOURCE_DIR}"
          FILES
          "Test.cxx")
+target_link_libraries(cpputils_testing PUBLIC cpputils_refl_utils)
 
 function(cpputils_discover_tests TARGET)
   # Path where the generated test list will live
