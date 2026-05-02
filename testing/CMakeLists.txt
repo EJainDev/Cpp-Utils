@@ -9,3 +9,5 @@ target_sources(
          "${CMAKE_CURRENT_SOURCE_DIR}"
          FILES
          "Test.cxx")
+
+add_subdirectory(tests)

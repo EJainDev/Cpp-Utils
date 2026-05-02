@@ -1,0 +1,6 @@
+add_executable(TestingTestsExecutable Test.cpp)
+target_link_libraries(TestingTestsExecutable PRIVATE cpputils_testing)
+
+add_test(NAME TestingTests COMMAND TestingTestsExecutable)
+
+set_tests_properties(TestingTests PROPERTIES FAIL_REGULAR_EXPRESSION "failed")
