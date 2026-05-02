@@ -48,9 +48,9 @@ class Memory {
    * @return std::optional<Memory> A Memory instance on success, std::nullopt on failure
    */
   static std::optional<Memory> init(Allocator& allocator, int count) pre(count > 0) {
-    return allocator.alloc(sizeof(T) * count)
-        .transform([&](T* data) { return Memory(data, count, allocator); })
-        .or_else([]() -> std::optional<Memory> { return std::nullopt; });
+    return allocator.alloc(sizeof(T) * count).transform([&](T* data) {
+      return Memory(data, count, allocator);
+    });
   }
 
   /**

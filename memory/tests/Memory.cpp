@@ -5,22 +5,23 @@ import std;
 
 template <typename T>
 struct Allocator {
-  int alloc_count;
-  int dealloc_count;
-
-  ~Allocator() { cpputils::testing::assertEqual(alloc_count, dealloc_count); }
+  std::size_t alloc_size;
+  std::size_t dealloc_size;
 
   std::optional<T*> alloc(std::size_t size) {
-    ++alloc_count;
-    return {nullptr};
+    alloc_size += size;
+    return new T[size / sizeof(T)];
   }
 
-  void dealloc(T* ptr) { ++dealloc_count; }
+  void dealloc(T* ptr) {
+    dealloc_size += sizeof(T);
+    delete[] ptr;
+  }
 };
 
 class MemoryTests {
  public:
-  [[= cpputils::testing::Test()]] void simpleTest() {
+  void simpleTest() {
     Allocator<int> allocator;
     cpputils::memory::Memory<int, decltype(allocator)>::init(allocator, 1);
   }

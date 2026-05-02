@@ -3,7 +3,7 @@ export module cpputils.testing;
 import std;
 
 namespace cpputils::testing {
-class Error : std::exception {
+export class Error : std::exception {
  public:
   explicit Error(std::string message) : message_(std::move(message)) {}
 
@@ -19,7 +19,7 @@ export struct AfterEach {};
 
 template <typename T>
 consteval auto getMembers() {
-  return std::meta::members_of(^^T, std::meta::access_context::unprivileged());
+  return std::meta::members_of(^^T, std::meta::access_context::current());
 }
 
 consteval auto getAnnotations(std::meta::info member) { return std::meta::annotations_of(member); }
@@ -27,34 +27,31 @@ consteval auto getAnnotations(std::meta::info member) { return std::meta::annota
 template <typename T>
 consteval auto getTests() {
   static constexpr auto members = std::define_static_array(getMembers<T>());
+  static constexpr auto size = members.size();
 
   bool has_before_each = false;
   std::meta::info before_func;
   std::vector<std::meta::info> tests;
-  std::vector<std::function<void(const T&)>> test_funcs;
   bool has_after_each = false;
   std::meta::info after_func;
 
   template for (constexpr auto m : members) {
-    if constexpr (std::meta::is_function(m)) {
-      static constexpr auto annotations = std::define_static_array(getAnnotations(m));
-      template for (constexpr auto a : annotations) {
-        if constexpr (std::meta::type_of(a) == ^^Test) {
-          tests.push_back(m);
-          break;
-        } else if constexpr (std::meta::type_of(a) == ^^BeforeEach) {
-          before_func = m;
-          has_before_each = true;
-        } else if constexpr (std::meta::type_of(a) == ^^AfterEach) {
-          after_func = m;
-          has_after_each = true;
-        }
+    if constexpr (std::meta::has_identifier(m)) {
+      if constexpr (std::string(std::meta::identifier_of(m)).contains("Test")) {
+        tests.push_back(m);
+      } else if constexpr (std::string(std::meta::identifier_of(m)).contains("SetUp")) {
+        before_func = m;
+        has_before_each = true;
+      } else if constexpr (std::string(std::meta::identifier_of(m)).contains("CleanUp")) {
+        after_func = m;
+        has_after_each = true;
       }
     }
   }
 
-  return std::tuple<bool, std::meta::info, std::vector<std::meta::info>, bool, std::meta::info>(
-      has_before_each, before_func, tests, has_after_each, after_func);
+  return std::tuple<bool, std::meta::info, std::span<const std::meta::info>, bool, std::meta::info,
+                    std::size_t>(has_before_each, before_func, std::define_static_array(tests),
+                                 has_after_each, after_func, size);
 }
 
 export void assertEqual(auto expected, auto actual) {
@@ -70,9 +67,15 @@ void test(T suite) {
   static constexpr auto result = getTests<T>();
   static constexpr auto tests = std::get<2>(result);
 
+  static constexpr auto size = std::get<2>(result).size();
+  static constexpr auto members_size = std::get<5>(result);
+
+  std::cout << "Found " << members_size << " members in test suite\n";
+  std::cout << "Running " << size << " tests in suite\n";
+
   template for (constexpr auto test : tests) {
     std::cout << "Running test: " << std::meta::identifier_of(test) << '\n';
-    if (std::get<0>(result)) {
+    if constexpr (std::get<0>(result)) {
       try {
         suite.[:std::get<1>(result):]();
       } catch (...) {
@@ -89,11 +92,11 @@ void test(T suite) {
                 << " failed with error: " << e.message() << '\n';
     } catch (const std::exception& e) {
       std::cout << "Test " << std::meta::identifier_of(test)
-                << " failed with exception message: " << e.what() << '\n';
+                << " failed with (uncaught) exception message: " << e.what() << '\n';
     } catch (...) {
       std::cout << "Test " << std::meta::identifier_of(test) << " failed with unknown error\n";
     }
-    if (std::get<3>(result)) {
+    if constexpr (std::get<3>(result)) {
       try {
         suite.[:std::get<4>(result):]();
       } catch (...) {
