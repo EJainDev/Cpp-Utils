@@ -3,7 +3,61 @@ export module cpputils.testing;
 import std;
 
 namespace cpputils::testing {
-export class Error : std::exception {
+template <std::size_t I>
+struct member_name {
+  static constexpr auto value = []() {
+    if constexpr (I < 10) {
+      return std::array<char, 3>{'m', static_cast<char>('0' + I), '\0'};
+    } else {
+      return std::array<char, 2>{'m', '\0'};  // Simplified for example
+    }
+  }();
+};
+
+template <typename... Ts, std::size_t... Is>
+consteval auto make_specs(std::index_sequence<Is...>) {
+  // Explicitly typing the vector prevents CTAD failure on empty packs
+  return std::vector<std::meta::info>{
+      std::meta::data_member_spec(^^Ts, {
+                                            .name = member_name<Is>::value.data()})...};
+}
+
+template <std::size_t N, typename F>
+constexpr auto with_indices(const F f) -> decltype(auto) {
+  return [&]<std::size_t... Is>(std::index_sequence<Is...>) -> decltype(auto) {
+    return f(std::integral_constant<std::size_t, Is>{}...);
+  }(std::make_index_sequence<N>{});
+}
+
+template <typename T>
+consteval auto getNonstaticDataMembers() {
+  return std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::current());
+}
+
+export template <typename... Ts>
+struct Tuple {
+  struct storage;
+
+  consteval {
+    auto storage_meta = ^^storage;
+
+    // Generate the specs using an index sequence to keep 'I' constant
+    auto specs = make_specs<Ts...>(std::make_index_sequence<sizeof...(Ts)>{});
+
+    std::meta::define_aggregate(storage_meta, specs);
+  }
+
+  static constexpr auto nsdms = std::define_static_array(getNonstaticDataMembers<storage>());
+
+  storage s;
+
+  static consteval auto getSizeof() -> std::size_t { return sizeof...(Ts); }
+};
+
+export template <typename... Ts>
+Tuple(Ts...) -> Tuple<Ts...>;
+
+class Error : std::exception {
  public:
   explicit Error(std::string message) : message_(std::move(message)) {}
 
@@ -26,14 +80,19 @@ struct AfterAll {};
 export template <typename T = int>
 struct Disabled {};
 
-export template <typename T>
+export template <int N, typename... TupleArgs>
+  requires(N > 0)
+struct Parameterize {
+  using TupleType = Tuple<TupleArgs...>;
+  TupleType parameters[N];
+};
+
+template <typename T>
 consteval auto getMembers() {
   return std::meta::members_of(^^T, std::meta::access_context::current());
 }
 
-export consteval auto getAnnotations(std::meta::info member) {
-  return std::meta::annotations_of(member);
-}
+consteval auto getAnnotations(std::meta::info member) { return std::meta::annotations_of(member); }
 
 template <typename T>
 consteval auto getTests() {
@@ -94,7 +153,7 @@ export template <typename T>
 void test(T suite = {}) {
   static constexpr auto result = getTests<T>();
 
-  // Manually unpack the tuple for better readability
+  // Manually unpack the tuple
   static constexpr auto has_before_all = std::get<0>(result);
   static constexpr auto before_all_func = std::get<1>(result);
   static constexpr auto has_before_each = std::get<2>(result);
@@ -127,6 +186,8 @@ void test(T suite = {}) {
     bool disabled = false;
     static constexpr auto annotations = std::define_static_array(getAnnotations(test));
 
+    bool parameterized = false;
+
     template for (constexpr auto a : annotations) {
       constexpr auto t = std::meta::template_of(std::meta::type_of(a));
 
@@ -138,6 +199,61 @@ void test(T suite = {}) {
     }
 
     if (disabled) {
+      continue;
+    }
+
+    template for (constexpr auto a : annotations) {
+      constexpr auto t = std::meta::template_of(std::meta::type_of(a));
+
+      if constexpr (t == ^^Parameterize) {
+        parameterized = true;
+
+        static constexpr auto template_args =
+            std::define_static_array(std::meta::template_arguments_of(std::meta::type_of(a)));
+        static constexpr auto num_sets = [:template_args[0]:];
+
+        std::cout << "Running parameterized test " << std::meta::identifier_of(test) << " with "
+                  << num_sets << " parameter sets\n";
+
+        static constexpr auto param_members = std::define_static_array(
+            getNonstaticDataMembers<
+                decltype(std::meta::extract<
+                             typename[:std::meta::substitute(^^Parameterize, template_args):]>(a)
+                             .parameters[0]
+                             .s)>());
+
+        for (const auto param :
+             std::meta::extract<typename[:std::meta::substitute(^^Parameterize, template_args):]>(a)
+                 .parameters) {
+          template for (constexpr auto m : param_members) {
+            std::cout << "\t- {" << std::to_string(param.s.[:m:]);
+          }
+          std::cout << "} --";
+
+          try {
+            auto start = std::chrono::system_clock::now();
+            with_indices<param.getSizeof()>(
+                [&](auto... Is) { return suite.[:test:](param.s.[:param_members[Is]:]...); });
+            auto end = std::chrono::system_clock::now();
+
+            auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+            std::cout << " passed in " << duration.count() / 1'000'000.0 << " ms\n";
+          } catch (const Error& e) {
+            std::cout << "Test " << std::meta::identifier_of(test)
+                      << " failed with error: " << e.message() << '\n';
+          } catch (const std::exception& e) {
+            std::cout << "Test " << std::meta::identifier_of(test)
+                      << " failed with (uncaught) exception message: " << e.what() << '\n';
+          } catch (...) {
+            std::cout << "Test " << std::meta::identifier_of(test)
+                      << " failed with unknown error\n";
+          }
+        }
+      }
+    }
+
+    if (parameterized) {
       continue;
     }
 

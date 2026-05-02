@@ -3,6 +3,8 @@ import cpputils.memory;
 
 import std;
 
+using namespace cpputils::testing;
+
 template <typename T>
 struct Allocator {
   struct Data {
@@ -24,15 +26,16 @@ struct Allocator {
 
 class MemoryTests {
  public:
-  void basicSingleAllocTest() {
+  [[= Test{}]][[= Parameterize<3, int>{Tuple<int>{1}, Tuple<int>{5}, Tuple<int>{10}}]] void
+      basicSingleAlloc(int size = 1) {
     Allocator<int> allocator;
     {
-      cpputils::memory::Memory<int, decltype(allocator)>::init(allocator, 1);
+      cpputils::memory::Memory<int, decltype(allocator)>::init(allocator, size);
     }
     cpputils::testing::assertEqual(0, allocator.data->alloc_count);
   }
 
-  void forcedDeallocTest() {
+  [[= cpputils::testing::Test{}]] void forcedDealloc() {
     Allocator<int> allocator;
     {
       auto mem = cpputils::memory::Memory<int, decltype(allocator)>::init(allocator, 1);
