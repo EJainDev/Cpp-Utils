@@ -7,7 +7,14 @@ set(CMAKE_CXX_MODULE_STD 1)
 
 project(CppUtils LANGUAGES C CXX)
 
+option(REFL_UTILS_LIBRARY "Build the reflection utility library" ON)
+option(TESTING_LIBRARY "Build the testing library" ON)
+option(MEMORY_LIBRARY "Build the raw memory management library" OFF)
 option(ENABLE_TESTING "Enable building and execution of tests" OFF)
+
+if(TESTING_LIBRARY)
+  set(REFL_UTILS_LIBRARY ON)
+endif()
 
 if(ENABLE_TESTING)
   find_program(GCOV_PATH gcov)
@@ -30,6 +37,15 @@ endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -freflection")
 
-add_subdirectory(refl_utils)
-add_subdirectory(testing)
-add_subdirectory(memory)
+# Sub-libraries
+if(REFL_UTILS_LIBRARY)
+  add_subdirectory(refl_utils)
+endif()
+
+if(TESTING_LIBRARY)
+  add_subdirectory(testing)
+endif()
+
+if(MEMORY_LIBRARY)
+  add_subdirectory(memory)
+endif()
