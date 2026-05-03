@@ -3,6 +3,7 @@ import cpputils.memory;
 
 import std;
 
+using namespace cpputils::memory;
 using namespace cpputils::testing;
 
 template <typename T>
@@ -26,7 +27,22 @@ struct Allocator {
 
 class MemoryTests {
  public:
-  [[= Test{}]] void defaultConstructor() { cpputils::memory::Memory<int> mem; }
+  [[= Test{}]] void defaultConstructor() {
+    Memory<int> mem;
+    assertEqual(static_cast<bool>(mem), mem.isValid());
+    assertFalse(static_cast<bool>(mem));
+    assertEqual(static_cast<int*>(mem), mem.get());
+    assertNull(static_cast<int*>(mem));
+    assertDeath([&]() { mem.dealloc(); });
+
+    assertDeath([&]() { mem[0]; });
+    assertDeath([&]() { mem.at(0); });
+
+    [](const Memory<int>& mem) {
+      assertDeath([&]() { mem[0]; });
+      assertDeath([&]() { mem.at(0); });
+    }(mem);
+  }
 
   [[= Test{}]][[= Parameterize<3, int>{tuple(1), tuple(5), tuple(10)}]] void basicSingleAlloc(
       int size = 1) {
