@@ -1,3 +1,11 @@
+module;
+
+#if defined(__unix__) || defined(__APPLE__)
+#include <sys/types.h>
+#include <sys/wait.h>
+#include <unistd.h>
+#endif
+
 export module cpputils.testing;
 
 import cpputils.refl_utils;
@@ -84,11 +92,59 @@ class Abort {
   std::string message_;
 };
 
+namespace detail {
+struct DeathResult {
+  bool died;
+  std::string detail;
+};
+
+#if defined(__unix__) || defined(__APPLE__)
+template <typename F>
+DeathResult runDeathTest(F&& func) {
+  const pid_t pid = fork();
+
+  if (pid < 0) {
+    return {false, "fork() failed"};
+  }
+
+  if (pid == 0) {
+    try {
+      func();
+      std::_Exit(0);
+    } catch (...) {
+      std::_Exit(1);
+    }
+  }
+
+  int status = 0;
+  if (waitpid(pid, &status, 0) < 0) {
+    return {false, "waitpid() failed"};
+  }
+
+  if (WIFSIGNALED(status)) {
+    return {true, "terminated by signal " + std::to_string(WTERMSIG(status))};
+  }
+
+  if (WIFEXITED(status)) {
+    const int exit_code = WEXITSTATUS(status);
+    if (exit_code != 0) {
+      return {true, "exited with status " + std::to_string(exit_code)};
+    }
+    return {false, "exited normally with status 0"};
+  }
+
+  return {false, "terminated with unknown status"};
+}
+#endif
+}  // namespace detail
+
 // Different annotations recognized by the library
 export template <typename T = int>
 struct BeforeEach {};
 export template <typename T = int>
 struct Test {};
+export template <typename T = int>
+struct DeathTest {};
 export template <typename T = int>
 struct AfterEach {};
 export template <typename T = int>
@@ -264,6 +320,18 @@ void assertThrowsExact(auto func) {
   }
 }
 
+export void assertDeath(auto func) {
+#if defined(__unix__) || defined(__APPLE__)
+  auto result = detail::runDeathTest(std::move(func));
+  if (!result.died) {
+    throw Error("Assertion failed: expected process death, child " + result.detail);
+  }
+#else
+  (void)func;
+  throw Error("Assertion failed: assertDeath is only supported on Linux/Unix");
+#endif
+}
+
 // Expect statements that can be called
 export void expectEqual(auto expected, auto actual) {
   if (expected != actual) {
@@ -373,6 +441,18 @@ void expectThrowsExact(auto func) {
       throw Abort("Expectation failed: thrown exception type did not match expected");
     }
   }
+}
+
+export void expectDeath(auto func) {
+#if defined(__unix__) || defined(__APPLE__)
+  auto result = detail::runDeathTest(std::move(func));
+  if (!result.died) {
+    throw Abort("Expectation failed: expected process death, child " + result.detail);
+  }
+#else
+  (void)func;
+  throw Abort("Expectation failed: expectDeath is only supported on Linux/Unix");
+#endif
 }
 
 // Finds and calls all tests in a suite
@@ -508,7 +588,6 @@ int test(int argc, char** argv, T suite = {}) {
           } catch (const Abort& e) {
             std::cout << "Test " << std::meta::identifier_of(test)
                       << " aborted with message: " << e.message() << '\n';
-            status_code = 1;
           } catch (const std::exception& e) {
             std::cout << "Test " << std::meta::identifier_of(test)
                       << " failed with (uncaught) exception message: " << e.what() << '\n';
@@ -561,7 +640,6 @@ int test(int argc, char** argv, T suite = {}) {
     } catch (const Abort& e) {
       std::cout << "Test " << std::meta::identifier_of(test)
                 << " aborted with message: " << e.message() << '\n';
-      status_code = 1;
     } catch (const std::exception& e) {
       std::cout << "Test " << std::meta::identifier_of(test)
                 << " failed with (uncaught) exception message: " << e.what() << '\n';
