@@ -8,6 +8,11 @@ target_sources(
          BASE_DIRS
          "${CMAKE_CURRENT_SOURCE_DIR}"
          FILES
+         "Tuple.cxx"
+         "Exceptions.cxx"
+         "Asserts.cxx"
+         "Expects.cxx"
+         "DeathTest.cxx"
          "Test.cxx")
 target_link_libraries(cpputils_testing PUBLIC cpputils_refl_utils)
 

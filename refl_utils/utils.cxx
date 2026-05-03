@@ -47,7 +47,17 @@ std::string format(const T& value) {
   } else if constexpr (std::is_enum_v<T>) {
     return enum_to_string(value);
   } else {
-    return std::format("{}", value);
+    if constexpr (std::is_pointer_v<T>) {
+      if (value == nullptr) {
+        return "nullptr";
+      } else {
+        return std::format("{}", reinterpret_cast<std::size_t>(value));
+      }
+    } else if constexpr (std::is_same_v<T, std::nullptr_t>) {
+      return "nullptr";
+    } else {
+      return std::format("{}", value);
+    }
   }
 }
 }  // namespace cpputils::refl_utils
