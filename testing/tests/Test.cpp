@@ -169,6 +169,38 @@ struct TestSuite {
     expectDeath([]() { expectEqual(1, 2); });
   }
 
+  [[= Test{}]] void ExpectDeathOnExpectNotEqualFailure() {
+    expectDeath([]() { expectNotEqual(2, 2); });
+  }
+
+  [[= Test{}]] void ExpectDeathOnExpectTrueFailure() {
+    expectDeath([]() { expectTrue(false); });
+  }
+
+  [[= Test{}]] void ExpectDeathOnExpectFalseFailure() {
+    expectDeath([]() { expectFalse(true); });
+  }
+
+  [[= Test{}]] void ExpectDeathOnExpectNearFailure() {
+    expectDeath([]() { expectNear(1.0, 2.0, 0.01); });
+  }
+
+  [[= Test{}]] void ExpectDeathOnExpectLessFailure() {
+    expectDeath([]() { expectLess(5, 1); });
+  }
+
+  [[= Test{}]] void ExpectDeathOnExpectLessEqualFailure() {
+    expectDeath([]() { expectLessEqual(5, 4); });
+  }
+
+  [[= Test{}]] void ExpectDeathOnExpectGreaterFailure() {
+    expectDeath([]() { expectGreater(1, 5); });
+  }
+
+  [[= Test{}]] void ExpectDeathOnExpectGreaterEqualFailure() {
+    expectDeath([]() { expectGreaterEqual(4, 5); });
+  }
+
   [[= Test{}]] void ExpectDeathOnExpectContainsFailure() {
     expectDeath([]() {
       std::vector<int> values{1, 2, 3};
@@ -178,6 +210,18 @@ struct TestSuite {
 
   [[= Test{}]] void ExpectDeathOnExpectThrowsFailure() {
     expectDeath([]() { expectThrows<std::runtime_error>([]() {}); });
+  }
+
+  [[= Test{}]] void ExpectDeathOnExpectThrowsMessageFailure() {
+    expectDeath([]() {
+      expectThrowsMessage<std::runtime_error>([]() { throw std::runtime_error("xyz"); },
+                                              "expected");
+    });
+  }
+
+  [[= Test{}]] void ExpectDeathOnExpectThrowsExactFailure() {
+    expectDeath(
+        []() { expectThrowsExact<CustomException>([]() { throw DerivedCustomException(); }); });
   }
 
   // ===== Failure Tests =====

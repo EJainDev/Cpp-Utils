@@ -21,6 +21,8 @@ if(ENABLE_TESTING)
 
   if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     add_compile_options(--coverage)
+    add_link_options(--coverage)
+
     set(CMAKE_CXX_FLAGS
         "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage -g -O0")
   endif()
