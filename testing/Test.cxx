@@ -21,6 +21,13 @@ constexpr auto with_indices(const F f) -> decltype(auto) {
   }(std::make_index_sequence<N>{});
 }
 
+enum class OS {
+  Windows,
+  Mac,
+  Linux,
+  Unknown,
+};
+
 /**
  * @defgroup TestingAnnotations Annotations for Testing Library
  * @brief This group contains the various annotations used by the library
@@ -100,6 +107,10 @@ struct Parameterize {
   TupleType parameters[N];
 };
 
+struct RequiresOS {
+  OS os;
+};
+
 template <typename... Args, typename... Rest>
 Parameterize(Tuple<Args...>, Rest...) -> Parameterize<1 + (int)sizeof...(Rest), Args...>;
 
@@ -171,6 +182,16 @@ consteval bool notHasRequiredParameter() {
 export template <typename T>
   requires(std::is_class_v<T>)
 int test(int argc, char** argv, T suite = {}) {
+#if defined(__linux__)
+  static constexpr auto os = OS::Linux;
+#elif defined(_WIN32)
+  static constexpr auto os = OS::Windows;
+#elif defined(__APPLE__)
+  static constexpr auto os = OS::Mac;
+#else
+  static constexpr auto os = OS::Unknown;
+#endif
+
   int status_code = 0;
 
   static constexpr auto result = getTests<T>();
@@ -226,6 +247,8 @@ int test(int argc, char** argv, T suite = {}) {
     }
 
     bool disabled = false;
+    bool osRequirementFailed = false;
+    OS requiredOS = OS::Unknown;
     static constexpr auto annotations = std::define_static_array(getAnnotations(test));
 
     bool parameterized = false;
@@ -237,11 +260,20 @@ int test(int argc, char** argv, T suite = {}) {
         std::cout << "Skipping disabled test: " << std::meta::identifier_of(test) << '\n';
         disabled = true;
         break;
+      } else if constexpr (t == ^^RequiresOS) {
+        if (os != std::meta::extract<RequiresOS>(a).os) {
+          osRequirementFailed = true;
+          requiredOS = std::meta::extract<RequiresOS>(a).os;
+        }
       }
     }
 
     if (disabled) {
       continue;
+    } else if (osRequirementFailed) {
+      std::cout << "Skipping test " << std::meta::identifier_of(test) << " because the current OS "
+                << enum_to_string(os) << " does not match the required OS of "
+                << enum_to_string(requiredOS) << '\n';
     }
 
     template for (constexpr auto a : annotations) {
