@@ -44,7 +44,7 @@ class MemoryTests {
     }(mem);
   }
 
-  [[= Test{}]][[= Parameterize<3, int>{tuple(1), tuple(5), tuple(10)}]] void basicSingleAlloc(
+  [[= Test{}]][[= Parameterize{tuple(1), tuple(5), tuple(10)}]] void basicSingleAlloc(
       int size = 1) {
     Allocator<int> allocator;
     {
@@ -53,7 +53,7 @@ class MemoryTests {
     cpputils::testing::assertEqual(0, allocator.data->alloc_count);
   }
 
-  [[= cpputils::testing::Test{}]][[= Parameterize<3, int>{tuple(1), tuple(5), tuple(10)}]] void
+  [[= cpputils::testing::Test{}]][[= Parameterize{tuple(1), tuple(5), tuple(10)}]] void
       forcedDealloc(int size = 1) {
     Allocator<int> allocator;
     {
