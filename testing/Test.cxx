@@ -190,7 +190,7 @@ int test(int argc, char** argv, T suite = {}) {
   std::string test_name;
 
   // Check mode
-  std::vector<std::string> args(argv, argv + argc);
+  std::vector<std::string> args(argv + 1, argv + argc);
   for (const auto& arg : args) {
     if (arg == "--list") {
       std::cout << std::meta::identifier_of(^^T) << ".\n";
