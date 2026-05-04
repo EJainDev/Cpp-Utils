@@ -155,6 +155,18 @@ consteval auto getTests() {
       size);
 }
 
+template <std::meta::info func>
+consteval bool notHasRequiredParameter() {
+  static constexpr auto args = std::define_static_array(std::meta::parameters_of(func));
+  template for (constexpr auto arg : args) {
+    if constexpr (!std::meta::has_default_argument(arg)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
 // Finds and calls all tests in a suite
 export template <typename T>
   requires(std::is_class_v<T>)
@@ -314,47 +326,55 @@ int test(int argc, char** argv, T suite = {}) {
       continue;
     }
 
-    std::cout << "Running test: " << std::meta::identifier_of(test) << '\n';
-    if constexpr (has_before_each) {
-      try {
-        suite.[:before_each_func:]();
-      } catch (...) {
-        std::cout << "BeforeEach function failed for test " << std::meta::identifier_of(test)
-                  << ", skipping...\n";
-        continue;  // Skip the test if setup fails
+    if constexpr (notHasRequiredParameter<test>()) {
+      std::cout << "Running test: " << std::meta::identifier_of(test) << '\n';
+      if constexpr (has_before_each) {
+        try {
+          suite.[:before_each_func:]();
+        } catch (...) {
+          std::cout << "BeforeEach function failed for test " << std::meta::identifier_of(test)
+                    << ", skipping...\n";
+          continue;  // Skip the test if setup fails
+        }
       }
-    }
 
-    try {
-      auto start = std::chrono::system_clock::now();
-      suite.[:test:]();
-      auto end = std::chrono::system_clock::now();
-
-      auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-      std::cout << "Test " << std::meta::identifier_of(test) << " passed in "
-                << duration.count() / 1'000'000.0 << " ms\n";
-    } catch (const Error& e) {
-      std::cout << "Test " << std::meta::identifier_of(test)
-                << " failed with error: " << e.message() << '\n';
-      status_code = 1;
-    } catch (const Abort& e) {
-      std::cout << "Test " << std::meta::identifier_of(test)
-                << " aborted with message: " << e.message() << '\n';
-    } catch (const std::exception& e) {
-      std::cout << "Test " << std::meta::identifier_of(test)
-                << " failed with (uncaught) exception message: " << e.what() << '\n';
-      status_code = 1;
-    } catch (...) {
-      std::cout << "Test " << std::meta::identifier_of(test) << " failed with unknown error\n";
-      status_code = 1;
-    }
-
-    if constexpr (has_after_each) {
       try {
-        suite.[:after_each_func:]();
+        auto start = std::chrono::system_clock::now();
+        suite.[:test:]();
+        auto end = std::chrono::system_clock::now();
+
+        auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+        std::cout << "Test " << std::meta::identifier_of(test) << " passed in "
+                  << duration.count() / 1'000'000.0 << " ms\n";
+      } catch (const Error& e) {
+        std::cout << "Test " << std::meta::identifier_of(test)
+                  << " failed with error: " << e.message() << '\n';
+        status_code = 1;
+      } catch (const Abort& e) {
+        std::cout << "Test " << std::meta::identifier_of(test)
+                  << " aborted with message: " << e.message() << '\n';
+      } catch (const std::exception& e) {
+        std::cout << "Test " << std::meta::identifier_of(test)
+                  << " failed with (uncaught) exception message: " << e.what() << '\n';
+        status_code = 1;
       } catch (...) {
-        std::cout << "AfterEach function failed for test " << std::meta::identifier_of(test)
-                  << '\n';
+        std::cout << "Test " << std::meta::identifier_of(test) << " failed with unknown error\n";
+        status_code = 1;
+      }
+
+      if constexpr (has_after_each) {
+        try {
+          suite.[:after_each_func:]();
+        } catch (...) {
+          std::cout << "AfterEach function failed for test " << std::meta::identifier_of(test)
+                    << '\n';
+        }
+      }
+    } else {
+      if (!parameterized) {
+        std::cout << "Warning: Test " << std::meta::identifier_of(test)
+                  << " did not execute because it has required arguments that were not given via "
+                     "'Paremterized' annotation.\n";
       }
     }
   }
