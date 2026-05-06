@@ -21,6 +21,9 @@ constexpr auto with_indices(const F f) -> decltype(auto) {
   }(std::make_index_sequence<N>{});
 }
 
+/**
+ * @brief An enum with different OSs
+ */
 export enum class OS {
   Windows,
   Mac,
