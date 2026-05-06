@@ -21,7 +21,7 @@ constexpr auto with_indices(const F f) -> decltype(auto) {
   }(std::make_index_sequence<N>{});
 }
 
-enum class OS {
+export enum class OS {
   Windows,
   Mac,
   Linux,
@@ -116,6 +116,12 @@ export template <int N>
 struct DisallowOS {
   OS os[N];
 };
+
+template <typename... Ts>
+RequiresOS(Ts...) -> RequiresOS<sizeof...(Ts)>;
+
+template <typename... Ts>
+DisallowOS(Ts...) -> DisallowOS<sizeof...(Ts)>;
 
 template <typename... Args, typename... Rest>
 Parameterize(Tuple<Args...>, Rest...) -> Parameterize<1 + (int)sizeof...(Rest), Args...>;
@@ -274,10 +280,10 @@ int test(int argc, char** argv, T suite = {}) {
         auto osDetail =
             std::meta::extract<typename[:std::meta::substitute(^^RequiresOS, template_args):]>(a)
                 .os;
-        for (int i = 0; i < sizeof(osDetail.os) / sizeof(OS); ++i) {
-          if (os != osDetail.os[i]) {
+        for (int i = 0; i < sizeof(osDetail) / sizeof(OS); ++i) {
+          if (os != osDetail[i]) {
             osRequirementFailed = true;
-            requiredOS = osDetail.os[i];
+            requiredOS = osDetail[i];
             break;
           }
         }
@@ -286,11 +292,11 @@ int test(int argc, char** argv, T suite = {}) {
             std::define_static_array(std::meta::template_arguments_of(std::meta::type_of(a)));
 
         auto osDetail =
-            std::meta::extract<typename[:std::meta::substitute(^^RequiresOS, template_args):]>(a)
+            std::meta::extract<typename[:std::meta::substitute(^^DisallowOS, template_args):]>(a)
                 .os;
-        for (int i = 0; i < sizeof(osDetail.os) / sizeof(OS); ++i) {
-          if (os == osDetail.os[i]) {
-            osDisallowd = true;
+        for (int i = 0; i < sizeof(osDetail) / sizeof(OS); ++i) {
+          if (os == osDetail[i]) {
+            osDisallowed = true;
             break;
           }
         }
@@ -305,7 +311,7 @@ int test(int argc, char** argv, T suite = {}) {
                 << enum_to_string(requiredOS) << '\n';
     } else if (osDisallowed) {
       std::cout << "Skipping test " << std::meta::identifier_of(test) << " because the current OS "
-                << enum_to_string(os) << " is disallowed.";
+                << enum_to_string(os) << " is disallowed.\n";
     }
 
     template for (constexpr auto a : annotations) {

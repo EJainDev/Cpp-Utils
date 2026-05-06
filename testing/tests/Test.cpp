@@ -12,18 +12,19 @@ struct TestSuite {
   [[= Parameterize{tuple(5), tuple(50)}]] void parameterizedTest(int val) {
     assertTrue(val == 5 || val == 50);
   }
+  [[= Test{}]][[= RequiresOS{OS::Windows}]] void windows() {}
+  [[= Test{}]][[= RequiresOS{OS::Linux}]] void testLinux() {}
+  [[= Test{}]][[= RequiresOS{OS::Mac}]] void mac() {}
+  [[= Test{}]][[= RequiresOS{OS::Unknown}]] void other() {}
+  [[= Test{}]][[= RequiresOS{OS::Windows, OS::Linux}]] void windowsLinux() {}
+  [[= Test{}]][[= DisallowOS{OS::Windows}]] void nonWindows() {}
+  [[= Test{}]][[= DisallowOS{OS::Linux}]] void nonLinux() {}
+  [[= Test{}]][[= DisallowOS{OS::Mac}]] void nonMac() {}
+  [[= Test{}]][[= DisallowOS{OS::Unknown}]] void nonOther() {}
+  [[= Test{}]][[= DisallowOS{OS::Windows, OS::Linux}]] void nonWindowsLinux() {}
+
   [[= AfterEach{}]] void afterEach() { std::cout << "Running after each\n"; }
   [[= AfterAll{}]] void afterAll() { std::cout << "Running after all\n"; }
-  [[= RequiresOS{OS::Windows}]] void windows() {}
-  [[= RequiresOS{OS::Linux}]] void testLinux() {}
-  [[= RequiresOS{OS::Mac}]] void mac() {}
-  [[= RequiresOS{OS::Unknown}]] void other() {}
-  [[= RequiresOS{OS::Windows, OS::Linux}]] void windowsLinux() {}
-  [[= DisallowsOS{OS::Windows}]] void nonWindows() {}
-  [[= DisallowsOS{OS::Linux}]] void nonLinux() {}
-  [[= DisallowsOS{OS::Mac}]] void nonMac() {}
-  [[= DisallowsOS{OS::Unknown}]] void nonOther() {}
-  [[= DisallowsOS{OS::Windows, OS::Linux}]] void nonWindowsLinux() {}
 };
 
 int main(int argc, char** argv) {
