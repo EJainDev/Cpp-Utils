@@ -110,11 +110,17 @@ struct Parameterize {
   TupleType parameters[N];
 };
 
+/**
+ * @brief Marks this test to only execute on the specified OSs
+ */
 export template <int N>
 struct RequiresOS {
   OS os[N];
 };
 
+/**
+ * @brief Marks this test to not execute if it the current OS is one of the specified OSs
+ */
 export template <int N>
 struct DisallowOS {
   OS os[N];
@@ -193,7 +199,17 @@ consteval bool notHasRequiredParameter() {
   return true;
 }
 
-// Finds and calls all tests in a suite
+/**
+ * @brief Finds anc calls all tests within a test suite
+ *
+ * @tparam The type of the test suite
+ *
+ * @param argc The number of args passed to main
+ * @param argv The args passed to main
+ * @param suite A custom instantiation of the testing suite
+ *
+ * @return The status code (0 for passed/aborted all and 1 for any failed)
+ */
 export template <typename T>
   requires(std::is_class_v<T>)
 int test(int argc, char** argv, T suite = {}) {
