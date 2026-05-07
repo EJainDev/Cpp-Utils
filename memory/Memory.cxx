@@ -7,7 +7,6 @@ export import :SimplePool;
 export import :Errors;
 
 namespace cpputils::memory {
-
 /**
  * @brief RAII wrapper for allocator-backed memory of type T
  *
@@ -47,7 +46,7 @@ class Memory {
    * @param count The number of elements to allocate (must be greater than 0)
    * @return std::optional<Memory> A Memory instance on success, std::nullopt on failure
    */
-  static std::optional<Memory> init(Allocator allocator, int count) pre(count > 0) {
+  static std::optional<Memory> init(Allocator allocator, long long count) pre(count > 0) {
     return allocator.alloc(sizeof(T) * count).transform([&](T* data) {
       return Memory(data, count, allocator);
     });
@@ -82,26 +81,26 @@ class Memory {
   /**
    * @brief Bounds-checked element access
    */
-  T& at(int idx) pre(idx >= 0 && idx < _size) { return _ptr[idx]; }
+  T& at(long long idx) pre(idx >= 0 && idx < _size) { return _ptr[idx]; }
   /**
    * @brief Unchecked element access with precondition
    */
-  T& operator[](int idx) pre(idx >= 0 && idx < _size) { return _ptr[idx]; }
+  T& operator[](long long idx) pre(idx >= 0 && idx < _size) { return _ptr[idx]; }
   /**
    * @brief Bounds-checked element access (const)
    */
-  const T& at(int idx) const pre(idx >= 0 && idx < _size) { return _ptr[idx]; }
+  const T& at(long long idx) const pre(idx >= 0 && idx < _size) { return _ptr[idx]; }
   /**
    * @brief Unchecked element access with precondition (const)
    */
-  const T& operator[](int idx) const pre(idx >= 0 && idx < _size) { return _ptr[idx]; }
+  const T& operator[](long long idx) const pre(idx >= 0 && idx < _size) { return _ptr[idx]; }
 
  private:
-  Memory(T* data, int size, Allocator allocator) pre(size > 0) pre(data != nullptr)
+  Memory(T* data, long long size, Allocator allocator) pre(size > 0) pre(data != nullptr)
       : _ptr(data), _size(size), _allocator(allocator) {}
 
   T* _ptr = nullptr;
-  int _size = 0;
+  long long _size = 0;
   Allocator _allocator{};
 };
 }  // namespace cpputils::memory
