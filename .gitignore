@@ -4,3 +4,4 @@ build/
 !.gitattributes
 !.github/
 !.clang*
+!.readthedocs.yaml
