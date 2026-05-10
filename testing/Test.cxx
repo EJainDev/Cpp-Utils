@@ -5,6 +5,7 @@ export import :exceptions;
 export import :asserts;
 export import :expects;
 export import :death_test;
+export import :posix;
 
 import cpputils.refl;
 
@@ -210,7 +211,8 @@ consteval bool notHasRequiredParameter() {
  *
  * @return The status code (0 for passed/aborted all and 1 for any failed)
  */
-export template <std::is_class T>
+export template <typename T>
+  requires std::is_class_v<T>
 int test(int argc, char** argv, T suite = {}) {
 #if defined(__linux__)
   static constexpr auto os = OS::Linux;
