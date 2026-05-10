@@ -47,6 +47,7 @@ jobs:
               run: ctest --output-on-failure
 
             - name: Generate coverage report
+              working-directory: build
               run: |
                   gcovr \
                     -r ${{ github.workspace }} \
