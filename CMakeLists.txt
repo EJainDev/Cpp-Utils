@@ -11,25 +11,26 @@ option(REFL_LIBRARY "Build the reflection utility library" ON)
 option(TESTING_LIBRARY "Build the testing library" ON)
 option(MEMORY_LIBRARY "Build the raw memory management library" OFF)
 option(ENABLE_TESTING "Enable building and execution of tests" OFF)
+option(ENABLE_COVERAGE "Enable coverage reporting" OFF)
 
 if(TESTING_LIBRARY)
   set(REFL_LIBRARY ON)
 endif()
 
 if(ENABLE_TESTING)
-  find_program(GCOV_PATH gcov)
-  if(GCOV_PATH)
-    set(CTEST_COVERAGE_COMMAND "${GCOV_PATH}")
-  endif()
-
   include(CTest)
 
-  if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-    add_compile_options(--coverage)
-    add_link_options(--coverage)
+  option(ENABLE_COVERAGE "Enable coverage reporting" OFF)
 
-    set(CMAKE_CXX_FLAGS
-        "${CMAKE_CXX_FLAGS} -fprofile-arcs -ftest-coverage -g -O0")
+  if(ENABLE_COVERAGE)
+    find_program(GCOV_PATH gcov)
+
+    if(GCOV_PATH)
+      set(CTEST_COVERAGE_COMMAND "${GCOV_PATH}")
+    endif()
+
+    add_compile_options(-O0 -g --coverage)
+    add_link_options(--coverage)
   endif()
 endif()
 
