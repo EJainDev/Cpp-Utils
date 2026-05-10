@@ -52,6 +52,9 @@ jobs:
                   gcovr \
                     -r ${{ github.workspace }} \
                     --xml-pretty \
+                    --ignore-errors missing \
+                    --gcov-ignore-parse-errors \
+                    --exclude-unreachable-branches \
                     -o coverage.xml
 
             - name: Upload coverage
