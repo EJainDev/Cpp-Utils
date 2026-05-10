@@ -49,13 +49,13 @@ jobs:
             - name: Generate coverage report
               run: |
                   gcovr \
-                    -r . \
+                    -r ${{ github.workspace }} \
                     --xml-pretty \
                     -o coverage.xml
 
             - name: Upload coverage
               uses: codecov/codecov-action@v5
               with:
-                  files: coverage.xml
+                  files: build/coverage.xml
                   fail_ci_if_error: true
                   token: ${{ secrets.CODECOV_TOKEN }}
