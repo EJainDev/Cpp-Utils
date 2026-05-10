@@ -13,7 +13,8 @@ target_sources(
          "Asserts.cxx"
          "Expects.cxx"
          "DeathTest.cxx"
-         "Test.cxx")
+         "Test.cxx"
+         "Posix.cxx")
 target_link_libraries(cpputils_testing PUBLIC cpputils_refl)
 
 function(cpputils_discover_tests TARGET)

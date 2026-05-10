@@ -9,6 +9,7 @@ module;
 export module cpputils.testing:death_test;
 
 import :exceptions;
+import :posix;
 
 import std;
 
