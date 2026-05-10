@@ -1,0 +1,28 @@
+name: Build
+on:
+    push:
+        branches: [main]
+    pull_request:
+        branches: [main]
+
+jobs:
+    build:
+        runs-on: ubuntu-24.04
+        steps:
+            - name: Set up GCC
+              uses: egor-tensin/setup-gcc@v2
+              with:
+                  version: 16
+                  platform: x64
+
+            - name: Checkout Project
+              uses: actions/checkout@v4.2.2
+
+            - name: Build Project
+              uses: threeal/cmake-action@v2.1.0
+              with:
+                  build-dir: build
+                  generator: Ninja
+                  cxx-compiler: gcc-16
+                  options: |
+                      BUILD_TESTS=ON
