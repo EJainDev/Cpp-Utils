@@ -6,7 +6,7 @@ on:
         branches: [main]
 
 jobs:
-    build:
+    gcc-setup:
         runs-on: ubuntu-24.04
         steps:
             - name: Set up GCC
@@ -15,11 +15,18 @@ jobs:
                   version: 16
                   platform: x64
 
+    cmake-setup:
+        runs-on: ubuntu-24.04
+        steps:
             - name: Install CMake
               uses: ssrobins/install-cmake@v1
               with:
                   version: 4.2.3
 
+    build:
+        needs: [gcc-setup, cmake-setup]
+        runs-on: ubuntu-24.04
+        steps:
             - name: Checkout Project
               uses: actions/checkout@v4.2.2
 
@@ -31,4 +38,24 @@ jobs:
                   c-compiler: gcc-16
                   cxx-compiler: g++-16
                   options: |
-                      BUILD_TESTS=ON
+                      CMAKE_BUILD_TYPE=Release
+
+    test:
+        runs-on: ubuntu-24.04
+        needs: [gcc-setup, cmake-setup, build]
+        steps:
+            - name: Checkout Project
+              uses: actions/checkout@v4.2.2
+
+            - name: Build Project with Tests
+              uses: threeal/cmake-action@v2.1.0
+              with:
+                  build-dir: build
+                  generator: Ninja
+                  c-compiler: gcc-16
+                  cxx-compiler: g++-16
+                  options: |
+                      ENABLE_TESTING=ON
+                      CMAKE_BUILD_TYPE=Release
+            - name: Test Project
+              uses: threeal/ctest-action@v1.1.0
