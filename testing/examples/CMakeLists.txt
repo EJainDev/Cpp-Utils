@@ -1,3 +1,0 @@
-add_executable(BasicExample ${CMAKE_CURRENT_SOURCE_DIR}/BasicExample.cpp)
-target_link_libraries(BasicExample PRIVATE cpputils_testing)
-cpputils_discover_tests(BasicExample)

@@ -11,7 +11,6 @@ option(REFL_LIBRARY "Build the reflection utility library" ON)
 option(TESTING_LIBRARY "Build the testing library" ON)
 option(MEMORY_LIBRARY "Build the raw memory management library" OFF)
 option(ENABLE_TESTING "Enable building and execution of tests" OFF)
-option(BUILD_EXAMPLES "Enable building of the examples" OFF)
 
 if(TESTING_LIBRARY)
   set(REFL_LIBRARY ON)
