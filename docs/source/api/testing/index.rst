@@ -1,3 +1,5 @@
+.. _testing_api:
+
 Testing Library
 ===============
 

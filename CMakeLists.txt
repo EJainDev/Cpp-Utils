@@ -13,6 +13,7 @@ project(
 option(REFL_LIBRARY "Build the reflection utility library" ON)
 option(TESTING_LIBRARY "Build the testing library" ON)
 option(ENABLE_TESTING "Enable building and execution of tests" OFF)
+option(BUILD_EXAMPLES "Build example applications" OFF)
 option(ENABLE_COVERAGE "Enable coverage reporting" OFF)
 
 include(GNUInstallDirs)
@@ -37,6 +38,10 @@ if(ENABLE_TESTING)
     add_compile_options(-O0 -g --coverage)
     add_link_options(--coverage)
   endif()
+endif()
+
+if(BUILD_EXAMPLES)
+  add_subdirectory(examples)
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -freflection")
