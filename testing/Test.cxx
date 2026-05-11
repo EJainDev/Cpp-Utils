@@ -181,11 +181,9 @@ consteval auto getTests() {
     }
   }
 
-  return std::tuple<bool, std::meta::info, bool, std::meta::info, std::span<const std::meta::info>,
-                    bool, std::meta::info, bool, std::meta::info, std::size_t>(
-      has_before_all, before_all_func, has_before_each, before_func,
-      std::define_static_array(tests), has_after_each, after_func, has_after_all, after_all_func,
-      size);
+  return std::tuple(has_before_all, before_all_func, has_before_each, before_func,
+                    std::define_static_array(tests), has_after_each, after_func, has_after_all,
+                    after_all_func, size);
 }
 
 template <std::meta::info func>
