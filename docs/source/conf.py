@@ -24,3 +24,16 @@ exclude_patterns = []
 
 html_theme = "furo"
 html_static_path = ["_static"]
+
+html_theme_options = {
+    "navigation_with_keys": True,
+}
+
+html_sidebars = {
+    "**": [
+        "sidebar/brand.html",
+        "sidebar/search.html",
+        "sidebar/navigation.html",
+        "sidebar/ethical-ads.html",
+    ]
+}

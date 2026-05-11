@@ -8,7 +8,7 @@ Getting Started
 
 To get started with C++ Utils, first make sure you have installed the library as described in the :ref:`Installation <installation>` section of the documentation.
 
-Currently, the library provides one major utility: the testing framework. But, it also has another library for reflection utilities. You can checkout the testing example :ref:`here <testing_example>` and the reflection example :ref:`here <refl_example>`.
+Currently, the library provides one major utility: the testing framework which you can checkout :ref:`here <testing_example>`.
 
 .. _testing_example:
 
