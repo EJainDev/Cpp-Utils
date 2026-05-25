@@ -29,7 +29,7 @@ C++ Utils documentation
 What is C++ Utils?
 ------------------
 
-C++ Utils is a collection of C++26 Reflection based utilities to improve development speed and code quality.
+C++ Utils is a collection of C++26 Reflection based utilities to improve development speed and code quality. Currently, the library has one main utility: The Testing Framework, which provides a simple and efficient way to write unit tests for C++ code. You can checkout the installation guide :ref:`here <installation>` and the getting started guide :ref:`here <getting_started>`.
 
 .. note:: This library is still under development and breaking changes may occur.
 
