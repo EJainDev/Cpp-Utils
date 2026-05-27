@@ -35,6 +35,7 @@ struct BeforeEach {};
 export template <typename T = int>
 struct Test {
   char* name = nullptr;
+  bool disabled = false;
 };
 
 export template <typename T = int>
@@ -46,8 +47,11 @@ struct BeforeAll {};
 export template <typename T = int>
 struct AfterAll {};
 
-export template <typename T = int>
-struct Disabled {};
+struct InternalTest {
+  std::meta::info test;
+  const char* name;
+  bool disabled;
+};
 
 export template <int N, typename... TupleArgs>
   requires(N > 0)
@@ -85,7 +89,7 @@ consteval auto getTests() {
   std::meta::info before_all_func;
   bool has_before_each = false;
   std::meta::info before_func;
-  std::vector<std::pair<std::meta::info, const char*>> tests;
+  std::vector<InternalTest> tests;
   bool has_after_each = false;
   std::meta::info after_func;
   bool has_after_all = false;
@@ -102,7 +106,7 @@ consteval auto getTests() {
           const char* final_test_name =
               test_info.name != nullptr ? test_info.name
                                         : std::define_static_string(std::meta::identifier_of(m));
-          tests.push_back({m, final_test_name});
+          tests.emplace_back(m, final_test_name, test_info.disabled);
         } else if constexpr (t == ^^BeforeEach) {
           before_func = m;
           has_before_each = true;
@@ -174,7 +178,7 @@ int test(int argc, char** argv, T suite = {}) {
     if (arg == "--list") {
       std::cout << std::meta::identifier_of(^^T) << ".\n";
       template for (constexpr auto test_info : tests) {
-        constexpr auto current_test_name = test_info.second;
+        constexpr auto current_test_name = test_info.name;
         std::cout << "  " << current_test_name << '\n';
       }
       return 0;
@@ -201,13 +205,18 @@ int test(int argc, char** argv, T suite = {}) {
   }
 
   template for (constexpr auto test_info : tests) {
-    constexpr auto test = test_info.first;
-    constexpr auto current_test_name = test_info.second;
-    if (std::string(current_test_name) != test_name && !test_name.empty()) {
+    constexpr auto test = test_info.test;
+    constexpr auto current_test_name = test_info.name;
+    constexpr auto disabled = test_info.disabled;
+    if (!test_name.empty() && std::string(current_test_name) != test_name) {
       continue;
     }
 
-    bool disabled = false;
+    if constexpr (disabled) {
+      std::cout << "Skipping disabled test: " << current_test_name << '\n';
+      continue;
+    }
+
     bool osRequirementFailed = false;
     bool osDisallowed = false;
     OS requiredOS = OS::Unknown;
@@ -218,11 +227,7 @@ int test(int argc, char** argv, T suite = {}) {
     template for (constexpr auto a : annotations) {
       constexpr auto t = std::meta::template_of(std::meta::type_of(a));
 
-      if constexpr (t == ^^Disabled) {
-        std::cout << "Skipping disabled test: " << current_test_name << '\n';
-        disabled = true;
-        break;
-      } else if constexpr (t == ^^RequiresOS) {
+      if constexpr (t == ^^RequiresOS) {
         static constexpr auto template_args =
             std::define_static_array(std::meta::template_arguments_of(std::meta::type_of(a)));
 
@@ -252,9 +257,7 @@ int test(int argc, char** argv, T suite = {}) {
       }
     }
 
-    if (disabled) {
-      continue;
-    } else if (osRequirementFailed) {
+    if (osRequirementFailed) {
       std::cout << "Skipping test " << current_test_name << " because the current OS "
                 << enum_to_string(os) << " does not match the required OS of "
                 << enum_to_string(requiredOS) << '\n';
