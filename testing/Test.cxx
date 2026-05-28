@@ -32,10 +32,23 @@ export enum class OS {
 export template <typename T = int>
 struct BeforeEach {};
 
-export template <typename T = int>
+template <std::size_t N>
+struct FixedString {
+  char value[N];
+
+  constexpr FixedString(const char (&str)[N]) {
+    for (std::size_t i = 0; i < N; ++i) value[i] = str[i];
+  }
+
+  static constexpr bool isEmpty() { return N == 1; }
+};
+
+export template <FixedString Name = "">
 struct Test {
-  char* name = nullptr;
   bool disabled = false;
+  static constexpr auto name = Name.value;
+
+  constexpr auto isEmpty() const { return Name.isEmpty(); }
 };
 
 export template <typename T = int>
@@ -102,10 +115,18 @@ consteval auto getTests() {
         constexpr auto t = std::meta::template_of(std::meta::type_of(a));
 
         if constexpr (t == ^^Test) {
-          auto test_info = std::meta::extract<Test<int>>(a);
+          static constexpr auto template_args =
+              std::define_static_array(std::meta::template_arguments_of(std::meta::type_of(a)));
+
+          auto test_info =
+              std::meta::extract<typename[:std::meta::substitute(^^Test, template_args):]>(a);
+          std::string str_test_name;
+          if (!test_info.isEmpty()) {
+            str_test_name = test_info.name;
+          }
           const char* final_test_name =
-              test_info.name != nullptr ? test_info.name
-                                        : std::define_static_string(std::meta::identifier_of(m));
+              !test_info.isEmpty() ? std::define_static_string(str_test_name)
+                                   : std::define_static_string(std::meta::identifier_of(m));
           tests.emplace_back(m, final_test_name, test_info.disabled);
         } else if constexpr (t == ^^BeforeEach) {
           before_func = m;

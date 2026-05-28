@@ -8,7 +8,7 @@ struct TestSuite {
   [[= BeforeAll{}]] void beforeAll() { std::cout << "Running before all\n"; }
   [[= BeforeEach{}]] void beforeEach() { std::cout << "Running before each\n"; }
   [[= Test{.disabled = true}]] void disabledTest() {}
-  [[= Test{}]] void test() {}
+  [[= Test<"My Named Test">{}]] void test() {}
   [[ = Test{}, = Parameterize{tuple(5), tuple(50)} ]] void parameterizedTest(int val) {
     assertTrue(val == 5 || val == 50);
   }
