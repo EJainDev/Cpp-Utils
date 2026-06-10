@@ -164,6 +164,53 @@ consteval bool notHasRequiredParameter() {
   return true;
 }
 
+bool runBeforeEach(const auto& func) {
+  try {
+    func();
+  } catch (const std::exception& e) {
+    std::cout << "BeforeEach function failed with exception: " << e.what() << '\n';
+    return false;
+  } catch (...) {
+    std::cout << "BeforeEach function failed with unknown error\n";
+    return false;
+  }
+  return true;
+}
+
+bool runTest(const auto& func) {
+  try {
+    auto start = std::chrono::system_clock::now();
+    func();
+    auto end = std::chrono::system_clock::now();
+
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    std::cout << "Passed in " << duration.count() / 1'000'000.0 << " ms\n";
+  } catch (const Error& e) {
+    std::cout << "Failed with error: " << e.message() << '\n';
+    return false;
+  } catch (const Abort& e) {
+    std::cout << "Aborted with message: " << e.message() << '\n';
+    return false;
+  } catch (const std::exception& e) {
+    std::cout << "Failed with (uncaught) exception message: " << e.what() << '\n';
+    return false;
+  } catch (...) {
+    std::cout << "Failed with unknown error\n";
+    return false;
+  }
+  return true;
+}
+
+void runAfterEach(const auto& func) {
+  try {
+    func();
+  } catch (const std::exception& e) {
+    std::cout << "AfterEach function failed with exception: " << e.what() << '\n';
+  } catch (...) {
+    std::cout << "AfterEach function failed with unknown error\n";
+  }
+}
+
 export template <typename T>
   requires std::is_class_v<T>
 int test(int argc, char** argv, T suite = {}) {
@@ -311,18 +358,15 @@ int test(int argc, char** argv, T suite = {}) {
              std::meta::extract<typename[:std::meta::substitute(^^Parameterize, template_args):]>(a)
                  .parameters) {
           if constexpr (before_each_func) {
-            try {
-              suite.[:*before_each_func:]();
-            } catch (...) {
-              std::cout << " BeforeEach function failed\n";
-              continue;  // Skip the test if setup fails
+            if (!runBeforeEach([&suite, before_each_func]() { suite.[:*before_each_func:](); })) {
+              continue;
             }
           }
 
           template for (constexpr auto m : param_members) {
             std::cout << "\t- {" << std::to_string(param.s.[:m:]);
           }
-          std::cout << "} --";
+          std::cout << "} -- ";
 
           try {
             auto start = std::chrono::system_clock::now();
@@ -347,11 +391,43 @@ int test(int argc, char** argv, T suite = {}) {
           }
 
           if constexpr (after_each_func) {
-            try {
-              suite.[:*after_each_func:]();
-            } catch (...) {
-              std::cout << " AfterEach function failed\n";
+            runAfterEach([&suite, after_each_func]() { suite.[:*after_each_func:](); });
+          }
+        }
+      } else if constexpr (t == ^^ParameterizeTemplate) {
+        parameterized = true;
+
+        static constexpr auto template_args =
+            std::define_static_array(std::meta::template_arguments_of(std::meta::type_of(a)));
+        static constexpr auto num_sets = [:template_args[0]:];
+
+        std::cout << "Running parameterized test " << current_test_name << " with " << num_sets
+                  << " parameter sets\n";
+
+        for (const auto& param :
+             std::meta::extract<
+                 typename[:std::meta::substitute(^^ParameterizeTemplate, template_args):]>(a)
+                 .parameters) {
+          if constexpr (before_each_func) {
+            if (!runBeforeEach([&suite, before_each_func]() { suite.[:*before_each_func:](); })) {
+              continue;
             }
+          }
+
+          std::cout << "\t- <";
+
+          with_indices<std::tuple_size_v<typename decltype(param)::TupleType>>([&](auto... Is) {
+            ((std::cout << std::to_string(param.s.template get<Is>())), ...);
+          });
+          std::cout << "> -- ";
+
+          runTest([&suite, test, param]() {
+            return with_indices<std::tuple_size_v<typename decltype(param)::TupleType>>(
+                [&](auto... Is) { return suite.[:test:](param.s.template get<Is>()...); });
+          });
+
+          if constexpr (after_each_func) {
+            runAfterEach([&suite, after_each_func]() { suite.[:*after_each_func:](); });
           }
         }
       }
@@ -364,12 +440,8 @@ int test(int argc, char** argv, T suite = {}) {
     if constexpr (notHasRequiredParameter<test>()) {
       std::cout << "Running test: " << current_test_name << '\n';
       if constexpr (before_each_func) {
-        try {
-          suite.[:*before_each_func:]();
-        } catch (...) {
-          std::cout << "BeforeEach function failed for test " << current_test_name
-                    << ", skipping...\n";
-          continue;  // Skip the test if setup fails
+        if (!runBeforeEach([&suite, before_each_func]() { suite.[:*before_each_func:](); })) {
+          continue;
         }
       }
 
@@ -379,29 +451,23 @@ int test(int argc, char** argv, T suite = {}) {
         auto end = std::chrono::system_clock::now();
 
         auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
-        std::cout << "Test " << current_test_name << " passed in " << duration.count() / 1'000'000.0
-                  << " ms\n";
+
+        std::cout << "Passed in " << duration.count() / 1'000'000.0 << " ms\n";
       } catch (const Error& e) {
-        std::cout << "Test " << current_test_name << " failed with error: " << e.message() << '\n';
+        std::cout << "Failed with error: " << e.message() << '\n';
         status_code = 1;
       } catch (const Abort& e) {
-        std::cout << "Test " << current_test_name << " aborted with message: " << e.message()
-                  << '\n';
+        std::cout << "Aborted with message: " << e.message() << '\n';
       } catch (const std::exception& e) {
-        std::cout << "Test " << current_test_name
-                  << " failed with (uncaught) exception message: " << e.what() << '\n';
+        std::cout << "Failed with (uncaught) exception message: " << e.what() << '\n';
         status_code = 1;
       } catch (...) {
-        std::cout << "Test " << current_test_name << " failed with unknown error\n";
+        std::cout << "Failed with unknown error\n";
         status_code = 1;
       }
 
       if constexpr (after_each_func) {
-        try {
-          suite.[:*after_each_func:]();
-        } catch (...) {
-          std::cout << "AfterEach function failed for test " << current_test_name << '\n';
-        }
+        runAfterEach([&suite, after_each_func]() { suite.[:*after_each_func:](); });
       }
     } else {
       if (!parameterized) {
