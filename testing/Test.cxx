@@ -109,15 +109,11 @@ consteval auto getTests() {
   static constexpr auto members = std::define_static_array(getMembers<T>());
   static constexpr auto size = members.size();
 
-  bool has_before_all = false;
-  std::meta::info before_all_func;
-  bool has_before_each = false;
-  std::meta::info before_func;
+  std::optional<std::meta::info> before_all_func;
+  std::optional<std::meta::info> before_each_func;
   std::vector<InternalTest> tests;
-  bool has_after_each = false;
-  std::meta::info after_func;
-  bool has_after_all = false;
-  std::meta::info after_all_func;
+  std::optional<std::meta::info> after_each_func;
+  std::optional<std::meta::info> after_all_func;
 
   template for (constexpr auto m : members) {
     if constexpr (std::meta::has_identifier(m)) {
@@ -140,25 +136,20 @@ consteval auto getTests() {
                                    : std::define_static_string(std::meta::identifier_of(m));
           tests.emplace_back(m, final_test_name, test_info.disabled);
         } else if constexpr (t == ^^BeforeEach) {
-          before_func = m;
-          has_before_each = true;
+          before_each_func = m;
         } else if constexpr (t == ^^AfterEach) {
-          after_func = m;
-          has_after_each = true;
+          after_each_func = m;
         } else if constexpr (t == ^^BeforeAll) {
           before_all_func = m;
-          has_before_all = true;
         } else if constexpr (t == ^^AfterAll) {
           after_all_func = m;
-          has_after_all = true;
         }
       }
     }
   }
 
-  return std::tuple(has_before_all, before_all_func, has_before_each, before_func,
-                    std::define_static_array(tests), has_after_each, after_func, has_after_all,
-                    after_all_func, size);
+  return std::tuple(before_all_func, before_each_func, std::define_static_array(tests),
+                    after_each_func, after_all_func);
 }
 
 template <std::meta::info func>
@@ -191,15 +182,11 @@ int test(int argc, char** argv, T suite = {}) {
   static constexpr auto result = getTests<T>();
 
   // Manually unpack the tuple
-  static constexpr auto has_before_all = std::get<0>(result);
-  static constexpr auto before_all_func = std::get<1>(result);
-  static constexpr auto has_before_each = std::get<2>(result);
-  static constexpr auto before_each_func = std::get<3>(result);
-  static constexpr auto tests = std::get<4>(result);
-  static constexpr auto has_after_each = std::get<5>(result);
-  static constexpr auto after_each_func = std::get<6>(result);
-  static constexpr auto has_after_all = std::get<7>(result);
-  static constexpr auto after_all_func = std::get<8>(result);
+  static constexpr auto before_all_func = std::get<0>(result);
+  static constexpr auto before_each_func = std::get<1>(result);
+  static constexpr auto tests = std::get<2>(result);
+  static constexpr auto after_each_func = std::get<3>(result);
+  static constexpr auto after_all_func = std::get<4>(result);
   static constexpr auto size = tests.size();
 
   std::string test_name;
@@ -221,10 +208,10 @@ int test(int argc, char** argv, T suite = {}) {
 
   // The BeforeAll function is run once before any tests, and if it fails, the entire suite is
   // aborted
-  if constexpr (has_before_all) {
+  if constexpr (before_all_func) {
     std::cout << "Running BeforeAll setup for suite " << std::meta::identifier_of(^^T) << '\n';
     try {
-      suite.[:before_all_func:]();
+      suite.[:*before_all_func:]();
     } catch (const std::exception& e) {
       std::cout << "BeforeAll setup failed with exception: " << e.what() << ", aborting test suite "
                 << std::meta::identifier_of(^^T) << '\n';
@@ -323,9 +310,9 @@ int test(int argc, char** argv, T suite = {}) {
         for (const auto param :
              std::meta::extract<typename[:std::meta::substitute(^^Parameterize, template_args):]>(a)
                  .parameters) {
-          if constexpr (has_before_each) {
+          if constexpr (before_each_func) {
             try {
-              suite.[:before_each_func:]();
+              suite.[:*before_each_func:]();
             } catch (...) {
               std::cout << " BeforeEach function failed\n";
               continue;  // Skip the test if setup fails
@@ -359,9 +346,9 @@ int test(int argc, char** argv, T suite = {}) {
             status_code = 1;
           }
 
-          if constexpr (has_after_each) {
+          if constexpr (after_each_func) {
             try {
-              suite.[:after_each_func:]();
+              suite.[:*after_each_func:]();
             } catch (...) {
               std::cout << " AfterEach function failed\n";
             }
@@ -376,9 +363,9 @@ int test(int argc, char** argv, T suite = {}) {
 
     if constexpr (notHasRequiredParameter<test>()) {
       std::cout << "Running test: " << current_test_name << '\n';
-      if constexpr (has_before_each) {
+      if constexpr (before_each_func) {
         try {
-          suite.[:before_each_func:]();
+          suite.[:*before_each_func:]();
         } catch (...) {
           std::cout << "BeforeEach function failed for test " << current_test_name
                     << ", skipping...\n";
@@ -409,9 +396,9 @@ int test(int argc, char** argv, T suite = {}) {
         status_code = 1;
       }
 
-      if constexpr (has_after_each) {
+      if constexpr (after_each_func) {
         try {
-          suite.[:after_each_func:]();
+          suite.[:*after_each_func:]();
         } catch (...) {
           std::cout << "AfterEach function failed for test " << current_test_name << '\n';
         }
@@ -425,10 +412,10 @@ int test(int argc, char** argv, T suite = {}) {
     }
   }
 
-  if constexpr (has_after_all) {
+  if constexpr (after_all_func) {
     std::cout << "Running AfterAll teardown for suite " << std::meta::identifier_of(^^T) << '\n';
     try {
-      suite.[:after_all_func:]();
+      suite.[:*after_all_func:]();
     } catch (const std::exception& e) {
       std::cout << "AfterAll teardown failed with exception: " << e.what() << '\n';
     } catch (...) {
