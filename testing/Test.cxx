@@ -73,7 +73,7 @@ struct Parameterize {
   TupleType parameters[N];
 };
 
-export template <int N, typename... Args>
+template <int N, typename... Args>
   requires(N > 0 && (std::same_as<Args, std::meta::info> && ...))
 struct ParameterizeTemplate {
   using TupleType = Tuple<Args...>;
