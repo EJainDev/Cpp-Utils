@@ -1,2 +1,0 @@
-add_executable(TestingExample1 testing_example1.cpp)
-target_link_libraries(TestingExample1 PRIVATE cpputils_testing)

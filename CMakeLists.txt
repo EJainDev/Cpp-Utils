@@ -11,7 +11,6 @@ project(
   LANGUAGES C CXX)
 
 option(BUILD_TESTS "Enable building of tests" OFF)
-option(BUILD_EXAMPLES "Build example applications" OFF)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -19,10 +18,6 @@ include(CMakePackageConfigHelpers)
 if(BUILD_TESTS)
   include(CTest)
   enable_testing()
-endif()
-
-if(BUILD_EXAMPLES)
-  add_subdirectory(examples)
 endif()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -freflection")
