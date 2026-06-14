@@ -6,9 +6,9 @@ module;
 #include <unistd.h>
 #endif
 
-export module cpputils.testing:posix;
+export module annotest:posix;
 
-namespace cpputils::testing {
+namespace annotest {
 #if defined(__unix__) || defined(__APPLE__)
 using pid_t = __pid_t;
 
@@ -16,4 +16,4 @@ __pid_t fork() { return ::fork(); }
 
 __pid_t waitpid(__pid_t pid, int* status, int options) { return ::waitpid(pid, status, options); }
 #endif
-}  // namespace cpputils::testing
+}  // namespace annotest

@@ -1,11 +1,11 @@
-export module cpputils.testing:death_test;
+export module annotest:death_test;
 
 import :exceptions;
 import :posix;
 
 import std;
 
-namespace cpputils::testing {
+namespace annotest {
 struct DeathResult {
   bool died;
   std::string detail;
@@ -64,4 +64,4 @@ export void expectDeath(auto func) {
 #endif
 }
 
-}  // namespace cpputils::testing
+}  // namespace annotest

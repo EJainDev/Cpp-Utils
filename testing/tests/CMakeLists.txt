@@ -1,4 +1,0 @@
-add_executable(TestingTestsExecutable Test.cpp)
-target_link_libraries(TestingTestsExecutable PRIVATE cpputils_testing)
-
-cpputils_discover_tests(TestingTestsExecutable)

@@ -1,12 +1,13 @@
-export module cpputils.testing:tuple;
-
-import cpputils.refl;
+export module annotest:tuple;
 
 import std;
 
-using namespace cpputils::refl;
+namespace annotest {
+template <typename T>
+consteval auto getNonstaticDataMembers() {
+  return std::meta::nonstatic_data_members_of(^^T, std::meta::access_context::current());
+}
 
-namespace cpputils::testing {
 template <std::size_t I>
 struct member_name {
   static constexpr auto value = []() {
@@ -50,4 +51,4 @@ template <typename... Ts>
 Tuple(Ts...) -> Tuple<Ts...>;
 
 export consteval auto tuple(auto... args) { return Tuple<decltype(args)...>{.s = {args...}}; }
-}  // namespace cpputils::testing
+}  // namespace annotest

@@ -1,4 +1,4 @@
-export module cpputils.testing;
+export module annotest;
 
 export import :tuple;
 export import :exceptions;
@@ -7,13 +7,16 @@ export import :expects;
 export import :death_test;
 export import :posix;
 
-import cpputils.refl;
-
 import std;
 
-using namespace cpputils::refl;
+namespace annotest {
+template <typename T>
+consteval auto getMembers() {
+  return std::meta::members_of(^^T, std::meta::access_context::current());
+}
 
-namespace cpputils::testing {
+consteval auto getAnnotations(std::meta::info member) { return std::meta::annotations_of(member); }
+
 // Helper function to call a test with all the parameters in a tuple
 template <std::size_t N, typename F>
 constexpr auto with_indices(const F f) -> decltype(auto) {
@@ -498,4 +501,4 @@ int test(int argc, char** argv, T suite = {}) {
 
   return status_code;
 }
-}  // namespace cpputils::testing
+}  // namespace annotest

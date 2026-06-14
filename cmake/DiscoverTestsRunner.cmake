@@ -1,4 +1,4 @@
-function(cpputils_discover_tests TARGET)
+function(annotest_discover_tests TARGET)
   # 1. Define the target location for our generated ctest manifest file
   set(GENERATED_TESTS_FILE
       "${CMAKE_CURRENT_BINARY_DIR}/${TARGET}_discovered_tests.cmake")

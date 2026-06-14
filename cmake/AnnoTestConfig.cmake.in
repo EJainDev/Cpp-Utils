@@ -1,11 +1,11 @@
 @PACKAGE_INIT@
 
-include("${CMAKE_CURRENT_LIST_DIR}/cpputils_targets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/annotest_targets.cmake")
 
 if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/DiscoverTestsRunner.cmake")
   include("${CMAKE_CURRENT_LIST_DIR}/DiscoverTestsRunner.cmake")
 endif()
 
-if(NOT TARGET cpputils)
-  add_library(cpputils ALIAS cpputils::cpputils)
+if(NOT TARGET annotest)
+  add_library(annotest ALIAS annotest::annotest)
 endif()

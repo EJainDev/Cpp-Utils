@@ -1,8 +1,8 @@
-export module cpputils.testing:exceptions;
+export module annotest:exceptions;
 
 import std;
 
-namespace cpputils::testing {
+namespace annotest {
 // An exception class for test failures, to distinguish from other exceptions. It does not inherit
 // std::exception to prevent the user from catching it as frequently
 class Error {
@@ -26,4 +26,4 @@ class Abort {
  private:
   std::string message_;
 };
-}  // namespace cpputils::testing
+}  // namespace annotest

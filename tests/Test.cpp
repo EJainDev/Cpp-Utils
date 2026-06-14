@@ -1,8 +1,8 @@
-import cpputils.testing;
+import annotest;
 
 import std;
 
-using namespace cpputils::testing;
+using namespace annotest;
 
 struct TestSuite {
   [[= BeforeAll{}]] void beforeAll() { std::cout << "Running before all\n"; }
