@@ -1,0 +1,11 @@
+@PACKAGE_INIT@
+
+set(CppUtils_refl_FOUND FALSE)
+if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/refl/CppUtilsReflTargets.cmake")
+  include("${CMAKE_CURRENT_LIST_DIR}/refl/CppUtilsReflTargets.cmake")
+  set(CppUtils_refl_FOUND TRUE)
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/DiscoverTests.cmake")
+
+check_required_components(cpputils)

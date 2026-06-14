@@ -240,6 +240,7 @@ int test(int argc, char** argv, T suite = {}) {
 
   // Check mode
   std::vector<std::string> args(argv + 1, argv + argc);
+  int i = 0;
   for (const auto& arg : args) {
     if (arg == "--list") {
       std::cout << std::meta::identifier_of(^^T) << ".\n";
@@ -248,9 +249,15 @@ int test(int argc, char** argv, T suite = {}) {
         std::cout << "  " << current_test_name << '\n';
       }
       return 0;
-    } else {
-      test_name = arg;
+    } else if (arg == "--suite-name") {
+      if (std::string(args[i + 1]) == std::define_static_string(std::meta::identifier_of(^^T))) {
+        auto test_name_pos = std::find(args.begin(), args.end(), "--test-name");
+        if (test_name_pos != args.end()) {
+          test_name = std::string(*(test_name_pos + 1));
+        }
+      }
     }
+    ++i;
   }
 
   // The BeforeAll function is run once before any tests, and if it fails, the entire suite is
