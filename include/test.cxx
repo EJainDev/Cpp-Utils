@@ -247,10 +247,10 @@ int test(int argc, char** argv, T suite = {}) {
       }
       return 0;
     } else if (arg == "--test-name") {
+      constexpr auto starts_with_idx = std::string(std::meta::identifier_of(^^T)).size() + 1;
       if (std::string(args[i + 1])
               .starts_with(std::define_static_string(std::meta::identifier_of(^^T)))) {
-        test_name =
-            std::string(args[i + 1]).substr(std::string(std::meta::identifier_of(^^T)).size() + 1);
+        test_name = std::string(args[i + 1]).substr(starts_with_idx);
       }
     }
     ++i;
