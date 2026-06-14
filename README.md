@@ -1,16 +1,11 @@
+*Note: This project is currently under the process of renaming from `Cpp-Utils` to `AnnoTest`. All source code uses the `annotest` namespace but documentation is mostly inconsistent.
+
 # AnnoTest
-
-<div align="center">
-
-![Cpp-Utils Banner](docs/source/_static/CppUtils.png)
-
 [![Build and Test](https://github.com/EJainDev/Cpp-Utils/actions/workflows/build_and_test.yml/badge.svg)](https://github.com/EJainDev/Cpp-Utils/actions/workflows/build_and_test.yml) ![Documentation](https://app.readthedocs.org/projects/cpp-utils/badge/?version=latest)
-
-</div>
 
 ---
 
-This is a C++26 testing library that requires support for most C++26 features, especially reflection.
+This is a C++26 annotation-based, testing library that simplifies test development by adding annotations to create tests.
 
 # Testing
 
