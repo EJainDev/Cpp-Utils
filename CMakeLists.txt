@@ -57,12 +57,12 @@ install(
   ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
-set(CPPUTILS_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/AnnoTest")
+set(ANNOTEST_INSTALL_CMAKEDIR "${CMAKE_INSTALL_LIBDIR}/cmake/AnnoTest")
 
 configure_package_config_file(
   "${CMAKE_CURRENT_SOURCE_DIR}/cmake/AnnoTestConfig.cmake.in"
   "${CMAKE_CURRENT_BINARY_DIR}/AnnoTestConfig.cmake"
-  INSTALL_DESTINATION "${CPPUTILS_INSTALL_CMAKEDIR}")
+  INSTALL_DESTINATION "${ANNOTEST_INSTALL_CMAKEDIR}")
 
 write_basic_package_version_file(
   "${CMAKE_CURRENT_BINARY_DIR}/AnnoTestConfigVersion.cmake"
@@ -72,7 +72,7 @@ write_basic_package_version_file(
 install(
   EXPORT annotest_targets
   NAMESPACE annotest::
-  DESTINATION "${CPPUTILS_INSTALL_CMAKEDIR}")
+  DESTINATION "${ANNOTEST_INSTALL_CMAKEDIR}")
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/DiscoverTests.cmake
               ${CMAKE_CURRENT_SOURCE_DIR}/cmake/DiscoverTestsRunner.cmake
@@ -80,7 +80,7 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/DiscoverTests.cmake
 
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/AnnoTestConfig.cmake"
               "${CMAKE_CURRENT_BINARY_DIR}/AnnoTestConfigVersion.cmake"
-        DESTINATION "${CPPUTILS_INSTALL_CMAKEDIR}")
+        DESTINATION "${ANNOTEST_INSTALL_CMAKEDIR}")
 
 if(BUILD_TESTS)
   add_subdirectory(tests)
