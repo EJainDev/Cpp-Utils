@@ -15,12 +15,9 @@ function(cpputils_discover_tests TARGET)
     TARGET ${TARGET}
     POST_BUILD
     COMMAND
-      ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:${TARGET}> # Absolute
-                                                                  # path
-                                                                  # evaluated at
-                                                                  # build time
+      ${CMAKE_COMMAND} -DTEST_EXECUTABLE=$<TARGET_FILE:${TARGET}>
       -DOUTPUT_FILE=${GENERATED_TESTS_FILE} -DTEST_TARGET=${TARGET} -P
-      "${PROJECT_SOURCE_DIR}/cmake/CppUtils/DiscoverTests.cmake"
+      "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/DiscoverTests.cmake"
     COMMENT "Running custom test discovery for ${TARGET}..."
     VERBATIM)
 endfunction()

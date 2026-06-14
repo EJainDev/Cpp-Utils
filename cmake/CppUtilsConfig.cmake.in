@@ -2,6 +2,10 @@
 
 include("${CMAKE_CURRENT_LIST_DIR}/cpputils_targets.cmake")
 
+if (EXISTS "${CMAKE_CURRENT_LIST_DIR}/DiscoverTestsRunner.cmake")
+  include("${CMAKE_CURRENT_LIST_DIR}/DiscoverTestsRunner.cmake")
+endif()
+
 if(NOT TARGET cpputils)
   add_library(cpputils ALIAS cpputils::cpputils)
 endif()

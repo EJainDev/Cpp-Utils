@@ -90,6 +90,10 @@ install(
   NAMESPACE cpputils::
   DESTINATION "${CPPUTILS_INSTALL_CMAKEDIR}")
 
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/DiscoverTests.cmake
+              ${CMAKE_CURRENT_SOURCE_DIR}/cmake/DiscoverTestsRunner.cmake
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/CppUtils")
+
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/CppUtilsConfig.cmake"
               "${CMAKE_CURRENT_BINARY_DIR}/CppUtilsConfigVersion.cmake"
         DESTINATION "${CPPUTILS_INSTALL_CMAKEDIR}")
