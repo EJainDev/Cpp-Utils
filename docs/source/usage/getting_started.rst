@@ -6,9 +6,9 @@ Getting Started
 .. role:: cpp(code)
    :language: cpp
 
-To get started with C++ Utils, first make sure you have installed the library as described in the :ref:`Installation <installation>` section of the documentation.
+To get started with AnnoTest, first make sure you have installed the library as described in the :ref:`Installation <installation>` section of the documentation.
 
-Currently, the library provides one major utility: the testing framework which you can checkout :ref:`here <testing_example>`.
+Currently, the library provides one major utility: the testing framework.
 
 .. _testing_example:
 
@@ -17,20 +17,31 @@ Testing Framework
 
 You can begin using the testing framework with the following code:
 
-.. _testing_example_code:
+.. code-block:: cpp
 
-.. literalinclude:: ../../../examples/testing_example1.cpp
-    :language: cpp
-    :linenos:
+    import annotest;
 
-The first important thing to notice is that it is NOT a header, instead you use :cpp:`import cpputils.testing` to use the framework. This also means that this framework is **MACRO FREE** 🎉.
+    struct AddTest {
+        [[= Test{}]] void basic() {
+            assertEqual(4, 2 + 2);
+        }
 
-In this example we see 3 major features:
+        [[= Test{.disabled = true}]] void skipped() {}
 
-1. The :cpp:struct:`~cpputils::testing::BeforeEach` annotation allows us to define a setup function that will run before each test case. This is useful for initializing common resources or state needed for the tests.
-2. The :cpp:struct:`~cpputils::testing::Test` annotation is used to define test cases. Each function annotated with `Test` will be executed as a separate test case.
-3. The :cpp:struct:`~cpputils::testing::Parameterize` annotation allows us to run the same test case with different sets of parameters. This is useful for testing a function with various inputs without having to write separate test cases for each input. *Note that the function does not take in std::tuple, it takes in a custom tuple type defined by the library*.
+        [[= Test{}, = Parameterize{tuple(5), tuple(50)} ]] void parameterized(int val) {
+            assertTrue(val == 5 || val == 50);
+        }
+    };
 
-To actually run the test suite, you call the :cpp:func:`~cpputils::testing::test` function in your main function passing in the command line arguments and the type of your test suite struct. The library will handle running the tests and printing the results. You can choose to pass in a custom test suite instance as the last parameter, but by default, the library calls the default constructor.
+    int main(int argc, char** argv) {
+        return test<AddTest>(argc, argv);
+    }
 
-Checkout the other features of the testing framework in the :ref:`API documentation <testing_api>`.
+The first important thing to notice is that it is NOT a header — instead you use ``import annotest;`` to use the framework. This also means that this framework is **MACRO FREE** 🎉.
+
+In this example we see 4 major features:
+
+1. The :cpp:struct:`~annotest::BeforeEach` annotation allows you to define a setup function that runs before each test case.
+2. The :cpp:struct:`~annotest::Test` annotation defines test cases. Each function annotated with ``Test`` runs as a separate test.
+3. The :cpp:struct:`~annotest::Parameterize` annotation lets you run the same test with different parameter sets. *Note that the function takes individual parameters — not a std::tuple — each value corresponds to a function parameter in order.*
+4. The :cpp:func:`~annotest::test<T>` function in ``main`` runs the test suite, handling all annotations and printing results.

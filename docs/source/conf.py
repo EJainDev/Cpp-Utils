@@ -6,14 +6,18 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = "C++ Utils"
+project = "AnnoTest"
+copyright = "2026, Ekansh Jain"
+author = "Ekansh Jain"
 copyright = "2026, Ekansh Jain"
 author = "Ekansh Jain"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
-extensions = []
+extensions = ["sphinx.ext.autodoc", "sphinx.ext.viewcode"]
+
+exclude_patterns = []
 
 templates_path = ["_templates"]
 exclude_patterns = []

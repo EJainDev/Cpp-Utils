@@ -1,37 +1,36 @@
-C++ Utils documentation
-=======================
+AnnoTest
+========
 
 .. raw:: html
 
    <div align="center">
 
-.. image:: _static/CppUtils.png
-
-.. image:: https://img.shields.io/badge/github-repo-blue?logo=github
-   :target: https://github.com/EJainDev/Cpp-Utils
+.. image:: https://img.shields.io/badge/github--repo-blue?logo=github
+   :target: https://github.com/EJainDev/AnnoTest
 .. image:: https://shields.io/badge/License-MIT-green
-      :target: https://github.com/EJainDev/Cpp-Utils/blob/main/LICENSE
-.. image:: https://github.com/EJainDev/Cpp-Utils/actions/workflows/build_and_test.yml/badge.svg
-   :target: https://github.com/EJainDev/Cpp-Utils/actions/workflows/build_and_test.yml
-.. image:: https://app.readthedocs.org/projects/cpp-utils/badge/?version=latest
-   :target: https://cpp-utils.readthedocs.io/en/latest/
+   :target: https://github.com/EJainDev/AnnoTest/blob/main/LICENSE
+.. image:: https://github.com/EJainDev/AnnoTest/actions/workflows/build_and_test.yml/badge.svg
+   :target: https://github.com/EJainDev/AnnoTest/actions/workflows/build_and_test.yml
 .. image:: https://img.shields.io/badge/C%2B%2B-26-blue
-.. image:: https://img.shields.io/github/last-commit/EJainDev/Cpp-Utils
+.. image:: https://img.shields.io/github/last-commit/EJainDev/AnnoTest
    :alt: GitHub last commit
-.. image:: https://img.shields.io/github/issues/EJainDev/Cpp-Utils
-   :alt: GitHub Issues or Pull Requests
-
 
 .. raw:: html
 
    </div>
 
-What is C++ Utils?
-------------------
+What is AnnoTest?
+-----------------
 
-C++ Utils is a collection of C++26 Reflection based utilities to improve development speed and code quality. Currently, the library has one main utility: The Testing Framework, which provides a simple and efficient way to write unit tests for C++ code. You can checkout the installation guide :ref:`here <installation>` and the getting started guide :ref:`here <getting_started>`.
+AnnoTest is a C++26 **annotation-based unit testing library**. It leverages C++26 reflection and the module system to let you mark test functions with ``[[=Test{}]]`` annotations instead of relying on macros or boilerplate.
 
-.. note:: This library is still under development and breaking changes may occur.
+The library provides a familiar, Python/Java-inspired API with compile-time test discovery, parameterized tests, OS-level annotations, and death tests.
+
+.. code-block:: cpp
+
+    [[= Test{}]] void my_test();
+
+.. note:: This library is still under development. Breaking changes may occur.
 
 .. toctree::
    :maxdepth: 2

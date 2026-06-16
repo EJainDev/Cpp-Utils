@@ -3,41 +3,40 @@
 Installing
 ==========
 
-.. role:: cpp(code)
-   :language: cpp
-
 Requirements
 ------------
 
-To install C++ Utils, you need the following:
+To build AnnoTest, you need:
 
-* A C++26 compatible compiler (this library has been tested on GCC 16.1)
-* CMake 4.2.3 or higher (this library has been tested on CMake 4.2.3)
-    * It is unlikely that higher or lower versions will work because of the experimental flag for C++23 :cpp:`import std;` If you find a solution for another version, please create a PR on `GitHub <https://www.github.com/EJainDev/Cpp-Utils>`__.
-* Ninja or other CMake generators that support C++20 modules
-
+* **C++26 compatible compiler** — tested on GCC 16.1
+* **CMake 4.3 or higher** — required for C++26 module support and `CXX_MODULES` file set support
+    * The project uses the experimental C++23 `import std;` feature via the module feature UUID ``451f2fe2-a8a2-47c3-bc32-94786d8fc91b``
+* **Ninja** — or another CMake generator that supports C++20 modules
 
 Installation
 ------------
 
-Run the following commands to install the library:
+Clone and build:
 
 .. code-block:: bash
 
-    git clone https://www.github.com/EJainDev/Cpp-Utils.git && cd Cpp-Utils
-    
-    mkdir build
-
-    cmake -B build -S . -D CMAKE_BUILD_TYPE=Release
-    cmake --build build --target install --config Release
-
+    git clone https://github.com/EJainDev/AnnoTest.git && cd AnnoTest
+    cmake -B build -DCMAKE_BUILD_TYPE=Release
+    cmake --build build --target install
 
 Advanced Installation
 ---------------------
 
-To install and build the tests, pass the *-D ENABLE_TESTING=ON* flag to CMake.
+* To build and run the self-tests, pass ``-DBUILD_TESTS=ON`` (also accepted as ``-DENABLE_TESTING=ON``)
 
-To enable code coverage reports, pass the *-D ENABLE_COVERAGE=ON* flag to CMake and make sure that testing is enabled.
+The library installs to your system prefix. To use it in another CMake project:
 
+.. code-block:: cmake
 
-Checkout how to get started with the library in the :ref:`Getting Started <getting_started>` section of the documentation.
+    find_package(AnnoTest CONFIG REQUIRED)
+    add_executable(my_tests main.cpp)
+    target_link_libraries(my_tests PRIVATE annotest)
+
+The installed CMake package also provides ``annotest_discover_tests()`` for CTest integration — see the API documentation.
+
+Checkout how to get started with the library in the :ref:`Getting Started <getting_started>` section.

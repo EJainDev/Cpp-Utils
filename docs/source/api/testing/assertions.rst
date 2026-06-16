@@ -1,20 +1,17 @@
-Assertions and Expectations
-===========================
-
-.. cpp:namespace:: cpputils::testing
+.. cpp:namespace:: annotest
 
 Assertions
 ----------
 
-Assertions are used to verify that some feature of the library works as expected. If an assertion fails, an exception is thrown and the test case is marked as failed.
+Assertions verify that a condition holds. If an assertion fails, an :cpp:class:`Error` exception is thrown, the test case is marked as failed, and the library continues with the next test.
 
 .. cpp:function:: void assertEqual(auto expected, auto actual)
 
-    Asserts that ``expected`` and ``actual`` are equal using ``operator!=``.
+    Asserts that ``expected`` and ``actual`` are equal (checked via ``!=``).
 
 .. cpp:function:: void assertNotEqual(auto expected, auto actual)
 
-    Asserts that ``expected`` and ``actual`` are not equal using ``operator==``.
+    Asserts that ``expected`` and ``actual`` are not equal (checked via ``==``).
 
 .. cpp:function:: void assertTrue(auto value)
 
@@ -26,7 +23,7 @@ Assertions are used to verify that some feature of the library works as expected
 
 .. cpp:function:: void assertNear(auto expected, auto actual, auto tol = 1e-3f)
 
-    Asserts that ``abs(expected - actual)`` is less than or equal to ``tol``.
+    Asserts that ``abs(expected - actual) <= tol``.
 
 .. cpp:function:: void assertLess(auto a, auto b)
 
@@ -44,9 +41,9 @@ Assertions are used to verify that some feature of the library works as expected
 
     Asserts that ``a >= b``.
 
-.. cpp:function:: void assertContains(const auto& container, const auto& value)
+.. cpp:function:: void assertContains(auto const& container, auto const& value)
 
-    Asserts that ``value`` exists in ``container`` using ``std::find`` with ``std::begin``/``std::end``.
+    Asserts that ``value`` exists in ``container`` (uses ``std::find``).
 
 .. cpp:function:: template <typename E = std::exception> void assertThrows(auto func)
 
@@ -58,20 +55,24 @@ Assertions are used to verify that some feature of the library works as expected
 
 .. cpp:function:: void assertNull(auto ptr)
 
-    Asserts that ``ptr`` compares equal to ``nullptr``.
+    Asserts that ``ptr`` equals ``nullptr``.
+
+.. cpp:function:: void assertDeath(auto func)
+
+    Asserts that ``func`` causes the child process to exit abnormally (via ``fork`` / ``waitpid``). Unix and macOS only.
 
 Expectations
 ------------
 
-Expectations are used to verify behavior that should be true for it to be "worth it" for the test to continue. If it is not met, it is not a critical failure or flaw in the library, but it makes running the rest of the test pointless.
+Expectations verify conditions that are **not** critical failures — if an expectation fails, the test is aborted and the library skips the remaining lines in that test case. An :cpp:class:`Abort` exception is thrown instead of :cpp:class:`Error`.
 
 .. cpp:function:: void expectEqual(auto expected, auto actual)
 
-    Expects that ``expected`` and ``actual`` are equal using ``operator!=``.
+    Expects that ``expected`` and ``actual`` are equal.
 
 .. cpp:function:: void expectNotEqual(auto expected, auto actual)
 
-    Expects that ``expected`` and ``actual`` are not equal using ``operator==``.
+    Expects that ``expected`` and ``actual`` are not equal.
 
 .. cpp:function:: void expectTrue(auto value)
 
@@ -83,7 +84,7 @@ Expectations are used to verify behavior that should be true for it to be "worth
 
 .. cpp:function:: void expectNear(auto expected, auto actual, auto tol)
 
-    Expects that ``abs(expected - actual)`` is less than or equal to ``tol``.
+    Expects that ``abs(expected - actual) <= tol``.
 
 .. cpp:function:: void expectLess(auto a, auto b)
 
@@ -101,9 +102,9 @@ Expectations are used to verify behavior that should be true for it to be "worth
 
     Expects that ``a >= b``.
 
-.. cpp:function:: void expectContains(const auto& container, const auto& value)
+.. cpp:function:: void expectContains(auto const& container, auto const& value)
 
-    Expects that ``value`` exists in ``container`` using ``std::find`` with ``std::begin``/``std::end``.
+    Expects that ``value`` exists in ``container``.
 
 .. cpp:function:: template <typename E = std::exception> void expectThrows(auto func)
 
@@ -111,8 +112,12 @@ Expectations are used to verify behavior that should be true for it to be "worth
 
 .. cpp:function:: template <typename E> void expectThrowsExact(auto func)
 
-    Expects that ``func`` throws exactly type ``E`` (checked with ``typeid``).
+    Expects that ``func`` throws exactly type ``E``.
 
 .. cpp:function:: void expectNull(auto ptr)
 
-    Expects that ``ptr`` compares equal to ``nullptr``.
+    Expects that ``ptr`` equals ``nullptr``.
+
+.. cpp:function:: void expectDeath(auto func)
+
+    Expects that ``func`` causes the child process to exit abnormally. Unix and macOS only.
