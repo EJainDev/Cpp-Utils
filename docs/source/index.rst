@@ -38,5 +38,6 @@ The library provides a familiar, Python/Java-inspired API with compile-time test
 
    installation
    usage/getting_started
+   examples/index
    api/index
    genindex

@@ -15,6 +15,7 @@ The library is a **CMake `STATIC` library** (`annotest`) built from C++26 module
 ```
 annotest              — umbrella: imports all submodules
 annotest:asserts      — assert* helpers (throw Error)
+annotest:contracts    — contract violation state: contract_violation_occurred, custom_handler
 annotest:exceptions   — Error / Abort exception classes
 annotest:expects      — expect* helpers (throw Abort)
 annotest:death_test   — assertDeath / expectDeath (fork-based, Unix/macOS only)
@@ -33,6 +34,7 @@ Key CMake flags:
 | Path | Purpose |
 |------|---------|
 | `include/*.cxx` | Module source files (exported, no `.hpp` headers) |
+| `include/annotest_contract.h` | Header-only contract violation handler — bridges GCC C++26 contracts into AnnoTest |
 | `tests/` | Self-tests: `test.cpp` exercises all asserts, expects, test suite, and OS annotations |
 | `cmake/` | CMake install helpers: `DiscoverTests.cmake`, `DiscoverTestsRunner.cmake`, config template |
 | `docs/` | Sphinx docs (Read the Docs). **Note: docs are outdated per user note** |

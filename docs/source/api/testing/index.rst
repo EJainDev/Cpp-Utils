@@ -12,4 +12,5 @@ The design is inspired by Python's *unittest* and Java's *JUnit*, making it fami
 
     annotations
     assertions
+    contracts
     death
