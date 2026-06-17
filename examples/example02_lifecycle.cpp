@@ -17,6 +17,7 @@
  * 3. AfterAll()
  */
 import annotest;
+import annotest.contracts;
 
 import std;
 
@@ -29,67 +30,61 @@ using namespace annotest;
 int call_count = 0;
 
 struct LifecycleTests {
-    /**
-     * BeforeAll: called once, before the first test.
-     * If this throws, the entire suite is aborted.
-     */
-    [[= BeforeAll{}]] void setUp() {
-        call_count = 0;
-        std::cout << "[BeforeAll] Setup shared resources\n";
-    }
+  /**
+   * BeforeAll: called once, before the first test.
+   * If this throws, the entire suite is aborted.
+   */
+  [[= BeforeAll{}]] void setUp() {
+    call_count = 0;
+    std::cout << "[BeforeAll] Setup shared resources\n";
+  }
 
-    /**
-     * BeforeEach: called before every test.
-     * Resets the counter for each test.
-     */
-    [[= BeforeEach{}]] void resetCounters() {
-        call_count = 0;
-    }
+  /**
+   * BeforeEach: called before every test.
+   * Resets the counter for each test.
+   */
+  [[= BeforeEach{}]] void resetCounters() { call_count = 0; }
 
-    /**
-     * AfterEach: called after every test.
-     * If this throws, only a warning is printed (suite continues).
-     */
-    [[= AfterEach{}]] void reportCounts() {
-        std::cout << "[AfterEach] counter = " << call_count << "\n";
-    }
+  /**
+   * AfterEach: called after every test.
+   * If this throws, only a warning is printed (suite continues).
+   */
+  [[= AfterEach{}]] void reportCounts() {
+    std::cout << "[AfterEach] counter = " << call_count << "\n";
+  }
 
-    /**
-     * AfterAll: called once, after the last test.
-     * If this throws, only a warning is printed.
-     */
-    [[= AfterAll{}]] void tearDown() {
-        std::cout << "[AfterAll] Cleaning up shared resources\n";
-    }
+  /**
+   * AfterAll: called once, after the last test.
+   * If this throws, only a warning is printed.
+   */
+  [[= AfterAll{}]] void tearDown() { std::cout << "[AfterAll] Cleaning up shared resources\n"; }
 
-    /**
-     * Demonstrates BeforeEach runs before this test.
-     */
-    [[= Test{}]] void test_one() {
-        ++call_count;
-        assertEqual(1, call_count);
-    }
+  /**
+   * Demonstrates BeforeEach runs before this test.
+   */
+  [[= Test{}]] void test_one() {
+    ++call_count;
+    assertEqual(1, call_count);
+  }
 
-    /**
-     * Demonstrates BeforeEach runs before every test, including this one.
-     */
-    [[= Test{}]] void test_two() {
-        ++call_count;
-        ++call_count;
-        assertEqual(2, call_count);
-    }
+  /**
+   * Demonstrates BeforeEach runs before every test, including this one.
+   */
+  [[= Test{}]] void test_two() {
+    ++call_count;
+    ++call_count;
+    assertEqual(2, call_count);
+  }
 
-    /**
-     * Demonstrates AfterEach runs after this test.
-     */
-    [[= Test{}]] void test_three() {
-        ++call_count;
-        ++call_count;
-        ++call_count;
-        assertEqual(3, call_count);
-    }
+  /**
+   * Demonstrates AfterEach runs after this test.
+   */
+  [[= Test{}]] void test_three() {
+    ++call_count;
+    ++call_count;
+    ++call_count;
+    assertEqual(3, call_count);
+  }
 };
 
-int main(int argc, char** argv) {
-    return test<LifecycleTests>(argc, argv);
-}
+int main(int argc, char** argv) { return test<LifecycleTests>(argc, argv); }

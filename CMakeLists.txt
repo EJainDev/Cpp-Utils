@@ -11,6 +11,7 @@ project(
   LANGUAGES C CXX)
 
 option(BUILD_TESTS "Enable building of tests" OFF)
+option(BUILD_EXAMPLES "Enable building of examples" ON)
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
@@ -97,6 +98,10 @@ install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/DiscoverTests.cmake
 install(FILES "${CMAKE_CURRENT_BINARY_DIR}/AnnoTestConfig.cmake"
               "${CMAKE_CURRENT_BINARY_DIR}/AnnoTestConfigVersion.cmake"
         DESTINATION "${ANNOTEST_INSTALL_CMAKEDIR}")
+
+if(BUILD_EXAMPLES)
+  add_subdirectory(examples)
+endif()
 
 if(BUILD_TESTS)
   add_subdirectory(tests)

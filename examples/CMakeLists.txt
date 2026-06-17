@@ -1,0 +1,5 @@
+add_executable(example1_basic example01_basic.cpp)
+target_link_libraries(example1_basic PRIVATE annotest annotest_contract)
+
+add_executable(example2_lifecycle example02_lifecycle.cpp)
+target_link_libraries(example2_lifecycle PRIVATE annotest annotest_contract)
