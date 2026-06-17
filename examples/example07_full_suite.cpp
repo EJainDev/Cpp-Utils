@@ -21,7 +21,8 @@
  * This is a realistic integration test that you might see in a production codebase.
  *
  * Build & run:
- *   g++ -std=c++26 -freflection -fmodules -fmodule-map=. -x c++-module example07_full_suite.cpp -o example07_full_suite
+ *   g++ -std=c++26 -freflection -fmodules -fmodule-map=. -x c++-module example07_full_suite.cpp -o
+ * example07_full_suite
  *   ./example07_full_suite
  */
 #include <annotest_contract.h>
@@ -31,6 +32,8 @@ import annotest;
 import std;
 
 using namespace annotest;
+
+int safe_divide(int a, int b) pre(b != 0) { return a / b; }
 
 /**
  * A simple stack class under test — demonstrates real-world usage patterns.
@@ -80,30 +83,24 @@ struct FullSuite {
     fixture.push(3);
   }
 
-  [[= AfterEach{}]] void teardown() {
-    all_stacks.push_back(std::move(fixture));
-  }
+  [[= AfterEach{}]] void teardown() { all_stacks.push_back(std::move(fixture)); }
 
   // ─── Basic tests ─────────────────────────────────────────────────────
-  [[= Test{"stack is not empty after push"}]]
-  void basic_not_empty() {
+  [[= Test<"stack is not empty after push">{}]] void basic_not_empty() {
     assertFalse(fixture.empty());
     assertEqual(3, fixture.size());
   }
 
-  [[= Test{"named test with custom display name"}]]
-  void top_element() {
+  [[= Test<"named test with custom display name">{}]] void top_element() {
     assertEqual(3, fixture.top());
   }
 
-  [[= Test{.disabled = true}]]
-  void skipped_test() {
+  [[= Test{.disabled = true}]] void skipped_test() {
     assertEqual(0, 1);  // This never runs
   }
 
   // ─── Assert functions ────────────────────────────────────────────────
-  [[= Test{"all assert functions"}]]
-  void all_asserts() {
+  [[= Test<"all assert functions">{}]] void all_asserts() {
     // Equality
     assertEqual(3, 3);
     assertNotEqual(3, 4);
@@ -130,8 +127,7 @@ struct FullSuite {
   }
 
   // ─── Expect functions ────────────────────────────────────────────────
-  [[= Test{"all expect functions"}]]
-  void all_expects() {
+  [[= Test<"all expect functions">{}]] void all_expects() {
     // These use Abort instead of Error — test continues on failure
     expectEqual(3, 3);
     expectNotEqual(3, 4);
@@ -149,37 +145,32 @@ struct FullSuite {
   }
 
   // ─── Exception assertions ────────────────────────────────────────────
-  [[= Test{"throws specific exception"}]]
-  void throws_runtime_error() {
+  [[= Test<"throws specific exception">{}]] void throws_runtime_error() {
     assertThrows<std::runtime_error>([]() { throw std::runtime_error("test"); });
   }
 
-  [[= Test{"throws exact exception"}]]
-  void throws_exact() {
+  [[= Test<"throws exact exception">{}]] void throws_exact() {
     assertThrowsExact<std::runtime_error>([]() { throw std::runtime_error("exact"); });
   }
 
-  [[= Test{"expect exception"}]]
-  void expect_throws() {
+  [[= Test<"expect exception">{}]] void expect_throws() {
     expectThrows<std::runtime_error>([]() { throw std::runtime_error("test"); });
     expectThrowsExact<std::runtime_error>([]() { throw std::runtime_error("exact"); });
   }
 
   // ─── Parameterized tests ─────────────────────────────────────────────
-  [[= Test{"parameterized push/pop"}, = Parameterize{
-       tuple(1, 1), tuple(100, 100), tuple(-50, -50)
-  }]]
-  void push_pop(int push_val, int expect_pop) {
+  [[
+    = Test<"parameterized push/pop">{},
+    = Parameterize{tuple(1, 1), tuple(100, 100), tuple(-50, -50)}
+  ]] void push_pop(int push_val, int expect_pop) {
     Stack s;
     s.push(push_val);
     assertEqual(expect_pop, s.pop());
     assertTrue(s.empty());
   }
 
-  [[= Test{"parameterized size"}, = Parameterize{
-       tuple(0), tuple(1), tuple(10)
-  }]]
-  void push_n(int n) {
+  [[ = Test<"parameterized size">{},
+     = Parameterize{tuple(0), tuple(1), tuple(10)} ]] void push_n(int n) {
     Stack s;
     for (int i = 0; i < n; ++i) {
       s.push(i);
@@ -188,45 +179,39 @@ struct FullSuite {
   }
 
   // ─── OS annotations ──────────────────────────────────────────────────
-  [[= Test{"runs only on Linux"}, = RequiresOS{OS::Linux}]]
-  void linux_test() {
+  [[ = Test<"runs only on Linux">{}, = RequiresOS{OS::Linux} ]] void linux_test() {
     assertEqual(1, 1);
   }
 
-  [[= Test{"runs only on Linux or Mac"}, = RequiresOS{OS::Linux, OS::Mac}]]
-  void linux_or_mac() {
+  [[ = Test<"runs only on Linux or Mac">{},
+     = RequiresOS{OS::Linux, OS::Mac} ]] void linux_or_mac() {
     assertEqual(1, 1);
   }
 
-  [[= Test{"skips on Windows"}, = DisallowOS{OS::Windows}]]
-  void not_windows() {
+  [[ = Test<"skips on Windows">{}, = DisallowOS{OS::Windows} ]] void not_windows() {
     assertTrue(true);
   }
 
   // ─── Death tests (Unix/macOS only) ───────────────────────────────────
 #if defined(__unix__) || defined(__APPLE__)
-  [[= Test{"child process dies"}]]
-  void death_by_exception() {
+  [[= Test<"child process dies">{}]] void death_by_exception() {
     assertDeath([]() { throw std::runtime_error("die!"); });
   }
 
-  [[= Test{"expect child dies"}]]
-  void expect_death() {
+  [[= Test<"expect child dies">{}]] void expect_death() {
     expectDeath([]() { std::abort(); });
   }
 #endif
 
   // ─── Contract testing ────────────────────────────────────────────────
-  [[= Test{"contract violation on bad input"}]]
-  void contract_violation() {
+  [[= Test<"contract violation on bad input">{}]] void contract_violation() {
     assertContractViolation([]() {
       int x = safe_divide(10, 0);
       (void)x;  // Suppress unused warning
     });
   }
 
-  [[= Test{"no contract violation on valid input"}]]
-  void contract_ok() {
+  [[= Test<"no contract violation on valid input">{}]] void contract_ok() {
     assertNoContractViolation([]() {
       int x = safe_divide(10, 2);
       assertEqual(5, x);
@@ -234,6 +219,4 @@ struct FullSuite {
   }
 };
 
-int main(int argc, char** argv) {
-  return test<FullSuite>(argc, argv);
-}
+int main(int argc, char** argv) { return test<FullSuite>(argc, argv); }

@@ -146,6 +146,8 @@ Utility Annotations
 
     Similar to :cpp:struct:`Parameterize`, but passes **typed** tuples to the test function. Use this when you want explicit type safety for complex parameter packs.
 
+    .. important:: Parameters must be **constexpr-compatible** types (e.g. ``int``, ``double``). Non-structural types like ``std::string`` are not supported because parameter values are stored in a compile-time array.
+
     .. code-block:: cpp
 
         [[= Test{}, = ParameterizeTemplate{tuple(10), tuple(20)} ]]

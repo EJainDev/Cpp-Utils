@@ -45,10 +45,10 @@ struct ParameterizeTemplateDemo {
     assertGreater(n, 0);
   }
 
-  [[= Test{}, = ParameterizeTemplate{tuple(std::string("hello")), tuple(std::string("world"))}]]
-  void string_test(std::string s) {
-    assertGreater(s.size(), 0);
-    assertContains(s, s[0]);
+  [[= Test{}, = ParameterizeTemplate{tuple(1.5), tuple(2.7), tuple(0.5)}]]
+  void decimals(double x) {
+    assertTrue(x > 0.0);
+    assertNotEqual(x, 0.0);
   }
 };
 

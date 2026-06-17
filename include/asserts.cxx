@@ -33,7 +33,7 @@ export void assertFalse(auto value) {
   }
 }
 
-export void assertNear(auto expected, auto actual, auto tol = 1e-3f) {
+export void assertNear(auto expected, auto actual, double tol = 0.001) {
   if (!(std::abs(expected - actual) <= tol)) {
     throw Error("Assertion failed: expected " + format(expected) + " ≈ " + format(actual) +
                 " within " + format(tol));

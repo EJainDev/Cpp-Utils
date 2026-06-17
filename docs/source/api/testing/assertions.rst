@@ -69,7 +69,7 @@ Assertions verify that a condition holds. If an assertion fails, an :cpp:class:`
         assertFalse(false);
         assertFalse(1 == 0);
 
-.. cpp:function:: void assertNear(auto expected, auto actual, auto tol = 1e-3f)
+.. cpp:function:: void assertNear(auto expected, auto actual, double tol = 0.001)
 
     Asserts that ``abs(expected - actual) <= tol``. Useful for floating-point comparisons.
 
