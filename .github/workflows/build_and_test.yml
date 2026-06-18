@@ -26,8 +26,8 @@ jobs:
               with:
                   build-dir: build
                   generator: Ninja
-                  c-compiler: gcc-16
-                  cxx-compiler: g++-16
+                  c-compiler: gcc
+                  cxx-compiler: g++
                   options: |
                       ENABLE_TESTING=ON
                       CMAKE_BUILD_TYPE=Release
