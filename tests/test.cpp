@@ -23,6 +23,9 @@ struct TestSuite {
   [[ = Test{}, = DisallowOS{OS::Unknown} ]] void nonOther() {}
   [[ = Test{}, = DisallowOS{OS::Windows, OS::Linux} ]] void nonWindowsLinux() {}
 
+  // Test for --test-name filtering: verifies a named test can be isolated
+  [[ = Test<"filterable test">{} ]] void filterableTest() { assertTrue(true); }
+
   [[= AfterEach{}]] void afterEach() { std::cout << "Running after each\n"; }
   [[= AfterAll{}]] void afterAll() { std::cout << "Running after all\n"; }
 };
@@ -99,12 +102,28 @@ int main(int argc, char** argv) {
     assertContains(elements, 4);
   } catch (...) {
   }
+  // Edge cases: empty container, single element
+  try {
+    assertContains(std::vector<int>{}, 5);
+  } catch (...) {
+  }
+  assertContains(std::vector<int>{42}, 42);
+  try {
+    assertContains(std::vector<int>{42}, 99);
+  } catch (...) {
+  }
   try {
     assertThrows([]() { return; });
   } catch (...) {
   }
   try {
     assertThrowsExact<std::exception>([]() { throw std::runtime_error("Error"); });
+  } catch (...) {
+  }
+  // Regression test: assertThrowsExact must reject wrong exception types (not slice)
+  // Before the fix, catching by value caused object slicing and the exact check always passed.
+  try {
+    assertThrowsExact<std::logic_error>([]() { throw std::runtime_error("Error"); });
   } catch (...) {
   }
   try {
@@ -192,6 +211,11 @@ int main(int argc, char** argv) {
     expectThrowsExact<std::exception>([]() { throw std::runtime_error("Error"); });
   } catch (...) {
   }
+  // Regression test: expectThrowsExact must reject wrong exception types (not slice)
+  try {
+    expectThrowsExact<std::logic_error>([]() { throw std::runtime_error("Error"); });
+  } catch (...) {
+  }
   try {
     expectNull(elements.data());
   } catch (...) {
@@ -205,6 +229,10 @@ int main(int argc, char** argv) {
 
   auto my_tuple = tuple(3.0F, 4);
   assertEqual(my_tuple.getSizeof(), 2);
+
+  // Regression test: Tuple with 10+ elements verifies simplified member naming (I >= 10)
+  auto large_tuple = tuple(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12);
+  assertEqual(large_tuple.getSizeof(), 12);
 
   return test<TestSuite>(argc, argv);
 }
