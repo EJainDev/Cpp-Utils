@@ -12,7 +12,7 @@ jobs:
             - name: Set up GCC
               uses: egor-tensin/setup-gcc@v2
               with:
-                  version: 16
+                  version: latest
                   platform: x64
             - name: Install CMake
               uses: ssrobins/install-cmake@v1
@@ -27,8 +27,8 @@ jobs:
               with:
                   build-dir: build
                   generator: Ninja
-                  c-compiler: gcc-16
-                  cxx-compiler: g++-16
+                  c-compiler: cc
+                  cxx-compiler: c++
                   options: |
                       ENABLE_TESTING=ON
                       CMAKE_BUILD_TYPE=Release
