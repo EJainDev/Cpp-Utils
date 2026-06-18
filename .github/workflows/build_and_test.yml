@@ -33,7 +33,7 @@ jobs:
                   c-compiler: gcc
                   cxx-compiler: g++
                   options: |
-                      ENABLE_TESTING=ON
+                      BUILD_TESTS=ON
                       CMAKE_BUILD_TYPE=Release
 
             - name: Test Project
