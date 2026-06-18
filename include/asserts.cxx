@@ -33,7 +33,8 @@ export void assertFalse(auto value) {
   }
 }
 
-export void assertNear(auto expected, auto actual, double tol = 0.001) {
+export template <typename T, typename U, typename K = T>
+void assertNear(T expected, U actual, K tol = static_cast<K>(0.001)) {
   if (!(std::abs(expected - actual) <= tol)) {
     throw Error("Assertion failed: expected " + format(expected) + " ≈ " + format(actual) +
                 " within " + format(tol));
@@ -87,10 +88,18 @@ void assertThrowsExact(auto func) {
   try {
     func();
     throw Error("Assertion failed: expected exception, none thrown");
-  } catch (const E& e) {
-    if (typeid(e) != typeid(E)) {
-      throw Error(std::string("Assertion failed: expected exact exception type ") +
-                  typeid(E).name() + ", got " + typeid(e).name());
+  } catch (...) {
+    auto ep = std::current_exception();
+    try {
+      std::rethrow_exception(ep);
+    } catch (const E& e) {
+      if (typeid(e) != typeid(E)) {
+        throw Error(std::string("Assertion failed: expected exact exception type ") +
+                    typeid(E).name() + ", got " + typeid(e).name());
+      }
+      return;  // exact match
+    } catch (...) {
+      throw Error("Assertion failed: thrown exception type did not match expected");
     }
   }
 }

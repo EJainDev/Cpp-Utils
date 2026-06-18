@@ -33,7 +33,8 @@ export void expectFalse(auto value) {
   }
 }
 
-export void expectNear(auto expected, auto actual, auto tol) {
+export template <typename T, typename U, typename K = T>
+void expectNear(T expected, U actual, K tol = static_cast<K>(1e-3)) {
   if (!(std::abs(expected - actual) <= tol)) {
     throw Abort("Expectation failed: expected " + format(expected) + " ≈ " + format(actual) +
                 " within " + format(tol));

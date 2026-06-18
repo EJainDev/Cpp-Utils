@@ -275,6 +275,7 @@ int test(int argc, char** argv, T suite = {}) {
   }
 
   template for (constexpr auto test_info : tests) {
+    contract_violation_occurred = false;
     constexpr auto test = test_info.test;
     constexpr auto current_test_name = test_info.name;
     constexpr auto disabled = test_info.disabled;
@@ -477,7 +478,7 @@ int test(int argc, char** argv, T suite = {}) {
       if (!parameterized) {
         std::cout << "Warning: Test " << current_test_name
                   << " did not execute because it has required arguments that were not given via "
-                     "'Paremterized' annotation.\n";
+                     "'Parameterized' annotation.\n";
       }
     }
 
