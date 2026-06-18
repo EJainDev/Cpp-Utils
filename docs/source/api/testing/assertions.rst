@@ -69,7 +69,7 @@ Assertions verify that a condition holds. If an assertion fails, an :cpp:class:`
         assertFalse(false);
         assertFalse(1 == 0);
 
-.. cpp:function:: void assertNear(auto expected, auto actual, double tol = 0.001)
+.. cpp:function:: void assertNear(auto expected, auto actual, auto tol = 0.001)
 
     Asserts that ``abs(expected - actual) <= tol``. Useful for floating-point comparisons.
 
@@ -123,20 +123,26 @@ Assertions verify that a condition holds. If an assertion fails, an :cpp:class:`
 
 .. cpp:function:: template <typename E = std::exception> void assertThrows(auto func)
 
-    Asserts that ``func`` throws an exception of type ``E`` (or a derived type).
+    Asserts that ``func`` throws an exception. By default, catches any exception derived from ``std::exception`` (which covers all standard exceptions). For meaningful type-specific checking, always provide an explicit template argument.
 
     .. code-block:: cpp
 
-        assertThrows<std::runtime_error>([]() { throw std::runtime_error("error"); });
+        // Catches any std::exception-derived exception
+        assertThrows([]() { throw std::runtime_error("error"); });
         assertThrows([]() { throw std::invalid_argument("bad"); });
+
+        // For type-specific checking, use an explicit type
+        assertThrows<std::runtime_error>([]() { throw std::runtime_error("exact match"); });
 
 .. cpp:function:: template <typename E> void assertThrowsExact(auto func)
 
-    Asserts that ``func`` throws **exactly** type ``E`` (checked with ``typeid``).
+    Asserts that ``func`` throws **exactly** type ``E`` (checked with ``typeid``). Unlike ``assertThrows``, this rejects derived types — the thrown exception must be precisely ``E``.
 
     .. code-block:: cpp
 
         assertThrowsExact<std::runtime_error>([]() { throw std::runtime_error("exact"); });
+        // The following would FAIL (different type, even if derived):
+        // assertThrowsExact<std::exception>([]() { throw std::runtime_error("error"); });
 
 .. cpp:function:: void assertNull(auto ptr)
 
@@ -202,9 +208,9 @@ Expectations verify conditions that are **not** critical failures — if an expe
 
     Expects that ``value`` is falsy.
 
-.. cpp:function:: void expectNear(auto expected, auto actual, auto tol)
+.. cpp:function:: void expectNear(auto expected, auto actual, auto tol = 0.001)
 
-    Expects that ``abs(expected - actual) <= tol``.
+    Expects that ``abs(expected - actual) <= tol``. Has the same default tolerance as ``assertNear``.
 
 .. cpp:function:: void expectLess(auto a, auto b)
 
@@ -228,11 +234,11 @@ Expectations verify conditions that are **not** critical failures — if an expe
 
 .. cpp:function:: template <typename E = std::exception> void expectThrows(auto func)
 
-    Expects that ``func`` throws an exception of type ``E``.
+    Expects that ``func`` throws an exception. By default, catches any exception derived from ``std::exception`` (which covers all standard exceptions). For meaningful type-specific checking, always provide an explicit template argument.
 
 .. cpp:function:: template <typename E> void expectThrowsExact(auto func)
 
-    Expects that ``func`` throws exactly type ``E``.
+    Expects that ``func`` throws **exactly** type ``E`` (checked with ``typeid``). Unlike ``expectThrows``, this rejects derived types — the thrown exception must be precisely ``E``.
 
 .. cpp:function:: void expectNull(auto ptr)
 
@@ -257,11 +263,3 @@ Expectations verify conditions that are **not** critical failures — if an expe
 .. cpp:function:: void expectNoContractViolation(Func f)
 
     Expects that calling ``f`` does **not** trigger a contract violation.
-
-.. cpp:function:: void assertThrowsExact(auto func)
-
-    Asserts that ``func`` throws exactly type ``E`` (checked with ``typeid``).
-
-.. cpp:function:: void expectThrowsExact(auto func)
-
-    Expects that ``func`` throws exactly type ``E``.
