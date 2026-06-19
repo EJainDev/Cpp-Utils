@@ -1,0 +1,12 @@
+{
+    "cmakeExplorer.buildDir": "build",
+    "cmakeExplorer.extraCtestRunArgs": "",
+    "conventionalCommits.scopes": [
+        "testing",
+        "annotations",
+        "contracts",
+        "death_tests",
+        "reflection",
+        "docs"
+    ]
+}

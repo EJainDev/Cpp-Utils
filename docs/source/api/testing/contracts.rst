@@ -7,7 +7,7 @@ Contract Handling
 
 C++26 contracts are runtime checks enforced at function entry (`pre`), function exit (`post`), or inline (`contract_assert`). AnnoTest provides contract assertion helpers and a hook for custom violation handling.
 
-.. note:: C++26 contracts are **compiler builtin** features — they are not part of the C++23 standard. GCC 16 implements the full contract runtime API.
+.. note:: C++26 contracts are **compiler builtin** features — they are part of the C++26 standard. GCC 16 implements the full contract runtime API.
 
 Contract Builtin Statements
 ---------------------------
@@ -56,8 +56,8 @@ See the `example gallery <examples/index.html>`__ for usage examples. For the fu
 
 See also :ref:`getting_started`.
 
-Contract Handling
------------------
+Contract Handler Header
+------------------------
 
 Include the following header to install AnnoTest's default contract violation handler:
 
@@ -100,9 +100,9 @@ C++26 contracts support four enforcement modes (configured per-executable at com
 Global State
 ------------
 
-The ``annotest:contracts`` module exports two global atomic variables:
+The ``annotest:contracts`` module exports two global variables:
 
-.. cpp:var:: std::atomic<bool> contract_violation_occurred
+.. cpp:var:: bool contract_violation_occurred
 
     Tracks whether any contract violation has occurred during test execution.
     The library checks this flag after assert/expect calls to avoid double-reporting.
@@ -111,7 +111,7 @@ The ``annotest:contracts`` module exports two global atomic variables:
 
     A callable function pointer for custom contract violation handling.
     Set to ``nullptr`` by default. When non-null, the default handler delegates
-    to this function after setting :cpp:var:`contract_violation_occurred`.
+    to this function after setting :cpp:var:`contract_violation_occurred` to ``true``.
 
 Example:
 

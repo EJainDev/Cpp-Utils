@@ -20,6 +20,9 @@ DeathResult runDeathTest(F&& func) {
     return {false, "fork() failed"};
   }
 
+  // Note: The child inherits all file descriptors, signal handlers, and
+  // atexit handlers from the parent. Avoid complex parent state when using
+  // death tests — the child's lifetime is bounded by func()'s execution.
   // It is the child if pid == 0
   if (pid == 0) {
     try {

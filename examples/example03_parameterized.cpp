@@ -3,7 +3,6 @@
  *
  * This example demonstrates AnnoTest's parameterized testing:
  * - @cpp:struct[Parameterize] — struct-based parameter injection
- * - @cpp:struct[ParameterizeTemplate] — typed tuple parameter injection
  * - @cpp:func[tuple] — compile-time tuple builder
  *
  * See :doc:`/api/testing/annotations` for full documentation.
@@ -31,23 +30,6 @@ struct ParameterizeBasic {
      = Parameterize{tuple(1.0), tuple(2.5), tuple(0.001)} ]] void floating_point(double x) {
     assertNear(x, x);
     assertTrue(x >= 0.0);
-  }
-};
-
-/**
- * Section: ParameterizeTemplate with typed parameters.
- * Passes typed tuples instead of raw values.
- */
-struct ParameterizeTemplateDemo {
-  [[ = Test{}, = ParameterizeTemplate{tuple(10), tuple(20), tuple(100)} ]] void multiples(int n) {
-    assertTrue(n % 10 == 0);
-    assertGreater(n, 0);
-  }
-
-  [[ = Test{},
-     = ParameterizeTemplate{tuple(1.5), tuple(2.7), tuple(0.5)} ]] void decimals(double x) {
-    assertTrue(x > 0.0);
-    assertNotEqual(x, 0.0);
   }
 };
 

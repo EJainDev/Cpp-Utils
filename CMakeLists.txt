@@ -2,12 +2,13 @@ cmake_minimum_required(VERSION 4.3)
 
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -freflection")
 set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "451f2fe2-a8a2-47c3-bc32-94786d8fc91b")
 set(CMAKE_CXX_MODULE_STD 1)
 
 project(
   AnnoTest
-  VERSION 0.1.0.0
+  VERSION 1.0.0.0
   LANGUAGES C CXX)
 
 option(BUILD_TESTS "Enable building of tests" OFF)
@@ -20,8 +21,6 @@ if(BUILD_TESTS)
   include(CTest)
   enable_testing()
 endif()
-
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -freflection")
 
 # Library
 
@@ -47,8 +46,8 @@ target_sources(
 target_include_directories(
   annotest PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
                   $<INSTALL_INTERFACE:include>)
-
 target_compile_features(annotest PUBLIC cxx_std_26)
+target_compile_options(annotest PUBLIC -freflection)
 
 # Installation configuration
 

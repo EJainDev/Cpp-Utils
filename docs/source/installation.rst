@@ -27,7 +27,7 @@ Clone and build:
 Advanced Installation
 ---------------------
 
-* To build and run the self-tests, pass ``-DBUILD_TESTS=ON`` (also accepted as ``-DENABLE_TESTING=ON``)
+* To build and run the self-tests, pass ``-DBUILD_TESTS=ON``
 
 The library installs to your system prefix. To use it in another CMake project:
 

@@ -4,10 +4,6 @@
 
 AnnoTest is a C++26 **annotation-based unit testing library**. It uses C++26 reflection and module system to let users mark test functions with `[[=Test{}]]` annotations instead of macros or boilerplate.
 
-> **Naming inconsistency**: The project was renamed from `Cpp-Utils` to `AnnoTest`. The CMake target is `annotest`, the namespace is `annotest`, but the git remote and docs still reference `Cpp-Utils` / `cpputils`. Do not change the remote or docs without explicit direction.
-
-## C++26 Module Layout
-
 The library is a **CMake `STATIC` library** (`annotest`) built from C++26 modules. All source lives in `include/` — these are `.cxx` files that define `export module` units (not headers).
 
 ### Module tree (import graph)
@@ -25,7 +21,7 @@ annotest:utils        — reflection helpers: format(), enum_to_string(), getMem
 ```
 
 Key CMake flags:
-- **`-freflection`** — required (set globally in CMakeLists.txt line 23)
+- **`-freflection`** — required (set globally in CMakeLists.txt)
 - **CXX standard 26** — with module feature `451f2fe2-a8a2-47c3-bc32-94786d8fc91b`
 - **CMake 4.3+** required
 
@@ -37,8 +33,8 @@ Key CMake flags:
 | `include/annotest_contract.h` | Header-only contract violation handler — bridges GCC C++26 contracts into AnnoTest |
 | `tests/` | Self-tests: `test.cpp` exercises all asserts, expects, test suite, and OS annotations |
 | `cmake/` | CMake install helpers: `DiscoverTests.cmake`, `DiscoverTestsRunner.cmake`, config template |
-| `docs/` | Sphinx docs (Read the Docs). **Note: docs are outdated per user note** |
-| `.github/workflows/build_and_test.yml` | CI: GCC 16 + CMake 4.2.3 + Ninja on Ubuntu 24.04 |
+| `docs/` | Sphinx docs (Read the Docs) |
+| `.github/workflows/build_and_test.yml` | CI: GCC 16 + CMake 4.3.3 + Ninja on Ubuntu 24.04 |
 
 ## Building
 
@@ -48,8 +44,6 @@ cmake -B build -DCMAKE_C_COMPILER=gcc-16 -DCMAKE_CXX_COMPILER=g++-16 \
 cmake --build build
 ctest --test-dir build/tests
 ```
-
-CI uses `ENABLE_TESTING=ON` (maps to `-DBUILD_TESTS=ON`).
 
 ## Test Discovery System
 

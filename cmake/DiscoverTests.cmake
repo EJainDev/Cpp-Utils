@@ -1,4 +1,7 @@
 # Execute the testing binary in list mode
+# Note: Test names containing semicolons, equals signs, or other CMake-special
+# characters may cause malformed add_test() calls. Use only alphanumeric,
+# underscore, hyphen, and space characters in test names.
 execute_process(
   COMMAND "${TEST_EXECUTABLE}" --list
   OUTPUT_VARIABLE test_output

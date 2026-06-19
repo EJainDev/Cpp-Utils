@@ -34,19 +34,7 @@ Section 2 — **Parameterize with multiple parameters**
 
 Each tuple creates one sub-run with a single value.
 
-Section 3 — **ParameterizeTemplate with typed params**
-
-.. code-block:: cpp
-
-   [[= Test{}, = ParameterizeTemplate{tuple(10), tuple(20), tuple(100)}]]
-   void multiples(int n) {
-     assertTrue(n % 10 == 0);
-     assertGreater(n, 0);
-   }
-
-``ParameterizeTemplate`` passes **typed** tuples instead of raw values. Useful when parameters have complex types.
-
-Section 4 — **Parameterized tests with hooks**
+Section 3 — **Parameterized tests with hooks**
 
 .. code-block:: cpp
 

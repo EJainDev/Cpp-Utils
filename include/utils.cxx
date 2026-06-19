@@ -15,7 +15,7 @@ consteval auto getMembers() {
 
 consteval auto getAnnotations(std::meta::info member) { return std::meta::annotations_of(member); }
 
-template <typename E>
+export template <typename E>
   requires std::is_enum_v<E>
 constexpr std::string enum_to_string(E value) {
   template for (constexpr auto e : std::define_static_array(std::meta::enumerators_of(^^E))) {
@@ -27,7 +27,7 @@ constexpr std::string enum_to_string(E value) {
   return "<invalid enum value>";
 }
 
-template <typename T>
+export template <typename T>
 constexpr std::string format(const T& value) {
   if constexpr (std::is_class_v<T>) {
     std::string str;
@@ -52,7 +52,7 @@ constexpr std::string format(const T& value) {
       if (value == nullptr) {
         return "nullptr";
       } else {
-        return std::format("{}", reinterpret_cast<std::size_t>(value));
+        return std::format("{:#x}", reinterpret_cast<std::uintptr_t>(value));
       }
     } else if constexpr (std::is_same_v<T, std::nullptr_t>) {
       return "nullptr";

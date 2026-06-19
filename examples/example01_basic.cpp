@@ -2,12 +2,11 @@
  * @example example01_basic.cpp
  *
  * This example demonstrates the most basic AnnoTest usage:
- * - Writing a minimal test suite with @cpp:struct[Test] annotations
- * - Calling @cpp:func[Test::test]() to run the suite
+ * - Writing a minimal test suite with [[=Test]] annotations
+ * - Calling test<Test::test>() to run the suite
  *
- * Build & run:
- *   g++ -std=c++26 -freflection -fmodules -fmodule-map=. -x c++-module example01_basic.cpp -o
- * example01_basic
+ * Build via CMake using the examples/ target, or for standalone compilation:
+ *   g++ -std=c++26 -freflection -fmodules -fmodule-map=. -x c++-module example01_basic.cpp -o example01_basic
  *   ./example01_basic
  */
 #include <annotest_contract.h>

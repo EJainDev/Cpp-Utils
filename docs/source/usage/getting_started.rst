@@ -172,6 +172,17 @@ Use ``BeforeEach`` for setup logic instead:
         [[= BeforeEach{}]] void setup() { /* setup logic */ }
     };
 
+CTest integration
+~~~~~~~~~~~~~~~~~
+
+When running tests via CTest, **each test is executed in a separate process**. This means:
+
+* ``BeforeAll`` runs once *per test*, not once per test suite
+* ``AfterAll`` runs once *per test*, not once after all tests
+* ``BeforeEach`` and ``AfterEach`` behave the same as when running standalone
+
+This is a CTest characteristic, not an AnnoTest limitation. To use suite-level lifecycle hooks with guaranteed single execution, run the test executable directly rather than through CTest.
+
 Aggregate initialization
 ~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -184,7 +195,7 @@ See the complete example gallery in :ref:`Getting Started <testing_example>`:
 
 * :doc:`/examples/basic` — basic tests, named tests, disabled tests
 * :doc:`/examples/lifecycle` — BeforeAll, BeforeEach, AfterEach, AfterAll hooks
-* :doc:`/examples/parameterized` — Parameterize and ParameterizeTemplate with tuple
+* :doc:`/examples/parameterized` — Parameterize with tuple
 * :doc:`/examples/os_annotations` — RequiresOS and DisallowOS for platform-specific tests
 * :doc:`/examples/death_tests` — assertDeath and expectDeath for crash-testing
 * :doc:`/examples/contracts` — C++26 contract testing with assertContractViolation

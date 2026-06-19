@@ -8,13 +8,29 @@ namespace annotest {
 
 template <std::size_t I>
 struct member_name {
-  static constexpr auto value = []() {
+  // NOTE: This template only handles indices up to 9999. For I >= 10000 the generated names
+  // will overflow the character array and produce undefined behavior. When using tuple() with
+  // more than 9999 elements, consider splitting into multiple smaller tuples.
+  static constexpr auto internal_value() {
     if constexpr (I < 10) {
       return std::array<char, 3>{'m', static_cast<char>('0' + I), '\0'};
+    } else if constexpr (I < 100) {
+      return std::array<char, 4>{'m', static_cast<char>('0' + I / 10),
+                                 static_cast<char>('0' + I % 10), '\0'};
+    } else if constexpr (I < 1000) {
+      return std::array<char, 5>{'m', static_cast<char>('0' + I / 100),
+                                 static_cast<char>('0' + (I / 10) % 10),
+                                 static_cast<char>('0' + I % 10), '\0'};
     } else {
-      return std::array<char, 2>{'m', '\0'};  // Simplified for example
+      return std::array<char, 7>{
+          'm', static_cast<char>('0' + I / 1000),
+          static_cast<char>('0' + (I / 100) % 10),
+          static_cast<char>('0' + (I / 10) % 10),
+          static_cast<char>('0' + I % 10), '\0'};
     }
-  }();
+  }
+
+  static constexpr auto value = member_name<I>::internal_value();
 };
 
 template <typename... Ts, std::size_t... Is>

@@ -14,6 +14,8 @@ Under the Hood
 
 The ``fork()`` call creates a child process that runs ``func()`` in a try-catch block. The parent waits with ``waitpid()`` and checks the exit status. A normal exit (status 0) is treated as a failure; any non-zero exit is treated as a successful death.
 
+.. warning:: The child process inherits all file descriptors, signal handlers, and atexit handlers from the parent. Avoid complex parent state (shared memory, global constructors, registered cleanup handlers) when using death tests — the child's lifetime is bounded by ``func()``'s execution.
+
 Example
 -------
 

@@ -25,14 +25,14 @@ struct DeathTestBasic {
    * Death via uncaught exception.
    * assertDeath succeeds because child exits non-zero.
    */
-  [[= Test{"death by exception"}]] void child_crashes() {
+  [[= Test<"death by exception">{}]] void child_crashes() {
     assertDeath([]() { throw std::runtime_error("crash!"); });
   }
 
   /**
    * Section: assertDeath with std::abort().
    */
-  [[= Test{"death by abort"}]] void child_aborts() {
+  [[= Test<"death by abort">{}]] void child_aborts() {
     assertDeath([]() { std::abort(); });
   }
 #endif
@@ -43,7 +43,7 @@ struct DeathTestBasic {
  */
 struct ExpectDeathDemo {
 #if defined(__unix__) || defined(__APPLE__)
-  [[= Test{"expect death by crash"}]] void expect_child_crashes() {
+  [[= Test<"expect death by crash">{}]] void expect_child_crashes() {
     expectDeath([]() { throw std::runtime_error("oops"); });
   }
 #endif
@@ -55,7 +55,7 @@ struct ExpectDeathDemo {
  */
 struct SurvivingProcess {
 #if defined(__unix__) || defined(__APPLE__)
-  [[= Test{"child survives — should fail"}]] void child_survives() {
+  [[= Test<"child survives — should fail">{}]] void child_survives() {
     assertDeath([]() { return; });  // Expected to fail: child exits 0
   }
 #endif

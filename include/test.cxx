@@ -71,13 +71,6 @@ struct Parameterize {
   TupleType parameters[N];
 };
 
-export template <int N, typename... Args>
-  requires(N > 0)
-struct ParameterizeTemplate {
-  using TupleType = Tuple<Args...>;
-  TupleType parameters[N];
-};
-
 export template <int N>
 struct RequiresOS {
   OS os[N];
@@ -97,10 +90,6 @@ DisallowOS(Ts...) -> DisallowOS<sizeof...(Ts)>;
 template <typename... Args, typename... Rest>
 Parameterize(Tuple<Args...>, Rest...) -> Parameterize<1 + (int)sizeof...(Rest), Args...>;
 
-template <typename... Args, typename... Rest>
-ParameterizeTemplate(Tuple<Args...>, Rest...)
-    -> ParameterizeTemplate<1 + (int)sizeof...(Rest), Args...>;
-
 // Gets all required information from the testing class
 template <typename T>
 consteval auto getTests() {
@@ -112,6 +101,8 @@ consteval auto getTests() {
   std::vector<InternalTest> tests;
   std::optional<std::meta::info> after_each_func;
   std::optional<std::meta::info> after_all_func;
+  bool has_duplicate_each = false;
+  bool has_duplicate_all = false;
 
   template for (constexpr auto m : members) {
     if constexpr (std::meta::has_identifier(m)) {
@@ -134,12 +125,24 @@ consteval auto getTests() {
                                    : std::define_static_string(std::meta::identifier_of(m));
           tests.emplace_back(m, final_test_name, test_info.disabled);
         } else if constexpr (t == ^^BeforeEach) {
+          if (before_each_func.has_value()) {
+            has_duplicate_each = true;
+          }
           before_each_func = m;
         } else if constexpr (t == ^^AfterEach) {
+          if (after_each_func.has_value()) {
+            has_duplicate_each = true;
+          }
           after_each_func = m;
         } else if constexpr (t == ^^BeforeAll) {
+          if (before_all_func.has_value()) {
+            has_duplicate_all = true;
+          }
           before_all_func = m;
         } else if constexpr (t == ^^AfterAll) {
+          if (after_all_func.has_value()) {
+            has_duplicate_all = true;
+          }
           after_all_func = m;
         }
       }
@@ -147,7 +150,7 @@ consteval auto getTests() {
   }
 
   return std::tuple(before_all_func, before_each_func, std::define_static_array(tests),
-                    after_each_func, after_all_func);
+                    after_each_func, after_all_func, has_duplicate_each, has_duplicate_all);
 }
 
 template <std::meta::info func>
@@ -232,6 +235,8 @@ int test(int argc, char** argv, T suite = {}) {
   static constexpr auto tests = std::get<2>(result);
   static constexpr auto after_each_func = std::get<3>(result);
   static constexpr auto after_all_func = std::get<4>(result);
+  static constexpr auto has_duplicate_each = std::get<5>(result);
+  static constexpr auto has_duplicate_all = std::get<6>(result);
   static constexpr auto size = tests.size();
 
   std::string test_name;
@@ -239,7 +244,8 @@ int test(int argc, char** argv, T suite = {}) {
   // Check mode
   std::vector<std::string> args(argv + 1, argv + argc);
   int i = 0;
-  for (const auto& arg : args) {
+  while (i < static_cast<int>(args.size())) {
+    const auto& arg = args[i];
     if (arg == "--list") {
       std::cout << std::meta::identifier_of(^^T) << ".\n";
       template for (constexpr auto test_info : tests) {
@@ -247,14 +253,30 @@ int test(int argc, char** argv, T suite = {}) {
         std::cout << "  " << current_test_name << '\n';
       }
       return 0;
-    } else if (arg == "--test-name") {
-      constexpr auto starts_with_idx = std::string(std::meta::identifier_of(^^T)).size() + 1;
-      if (std::string(args[i + 1])
-              .starts_with(std::define_static_string(std::meta::identifier_of(^^T)))) {
-        test_name = std::string(args[i + 1]).substr(starts_with_idx);
+    } else if (arg == "--test-name" && i + 1 < static_cast<int>(args.size())) {
+      std::string candidate = args[i + 1];
+      std::string full_name = std::string(std::meta::identifier_of(^^T)) + ".";
+      // Accept either the full qualified name "Suite.test_name" or just the test name "test_name"
+      if (candidate.starts_with(full_name)) {
+        test_name = candidate.substr(full_name.size());
+      } else {
+        constexpr auto starts_with_idx = std::string(std::meta::identifier_of(^^T)).size() + 1;
+        if (candidate.size() > static_cast<std::size_t>(starts_with_idx)) {
+          test_name = candidate.substr(starts_with_idx);
+        }
       }
     }
     ++i;
+  }
+
+  // Warn about duplicate lifecycle annotations
+  if (has_duplicate_each) {
+    std::cout << "[AnnoTest Warning] Duplicate BeforeEach/AfterEach annotation detected in '"
+              << std::meta::identifier_of(^^T) << "'. Only the last occurrence will be used.\n";
+  }
+  if (has_duplicate_all) {
+    std::cout << "[AnnoTest Warning] Duplicate BeforeAll/AfterAll annotation detected in '"
+              << std::meta::identifier_of(^^T) << "'. Only the last occurrence will be used.\n";
   }
 
   // The BeforeAll function is run once before any tests, and if it fails, the entire suite is
@@ -275,6 +297,7 @@ int test(int argc, char** argv, T suite = {}) {
   }
 
   template for (constexpr auto test_info : tests) {
+    contract_violation_occurred = false;
     constexpr auto test = test_info.test;
     constexpr auto current_test_name = test_info.name;
     constexpr auto disabled = test_info.disabled;
@@ -293,10 +316,12 @@ int test(int argc, char** argv, T suite = {}) {
     static constexpr auto annotations = std::define_static_array(getAnnotations(test));
 
     bool parameterized = false;
+    bool os_message_printed = false;
 
     template for (constexpr auto a : annotations) {
       constexpr auto t = std::meta::template_of(std::meta::type_of(a));
 
+      // OS checks (RequiresOS / DisallowOS)
       if constexpr (t == ^^RequiresOS) {
         static constexpr auto template_args =
             std::define_static_array(std::meta::template_arguments_of(std::meta::type_of(a)));
@@ -325,19 +350,19 @@ int test(int argc, char** argv, T suite = {}) {
           }
         }
       }
-    }
 
-    if (osRequirementFailed) {
-      std::cout << "Skipping test " << current_test_name << " because the current OS "
-                << enum_to_string(os) << " does not match the required OS of "
-                << enum_to_string(requiredOS) << '\n';
-    } else if (osDisallowed) {
-      std::cout << "Skipping test " << current_test_name << " because the current OS "
-                << enum_to_string(os) << " is disallowed.\n";
-    }
-
-    template for (constexpr auto a : annotations) {
-      constexpr auto t = std::meta::template_of(std::meta::type_of(a));
+      // Print OS skip message exactly once per test
+      if ((osRequirementFailed || osDisallowed) && !os_message_printed) {
+        os_message_printed = true;
+        if (osRequirementFailed) {
+          std::cout << "Skipping test " << current_test_name << " because the current OS "
+                    << enum_to_string(os) << " does not match the required OS of "
+                    << enum_to_string(requiredOS) << '\n';
+        } else if (osDisallowed) {
+          std::cout << "Skipping test " << current_test_name << " because the current OS "
+                    << enum_to_string(os) << " is disallowed.\n";
+        }
+      }
 
       // Parameterized tests are run in a loop for each set of parameters so they must use a
       // separate calling mechanism
@@ -354,9 +379,9 @@ int test(int argc, char** argv, T suite = {}) {
         static constexpr auto param_members = std::define_static_array(
             getNonstaticDataMembers<
                 decltype(std::meta::extract<
-                             typename[:std::meta::substitute(^^Parameterize, template_args):]>(a)
-                             .parameters[0]
-                             .s)>());
+                         typename[:std::meta::substitute(^^Parameterize, template_args):]>(a)
+                         .parameters[0]
+                         .s)>());
 
         for (const auto param :
              std::meta::extract<typename[:std::meta::substitute(^^Parameterize, template_args):]>(a)
@@ -393,42 +418,6 @@ int test(int argc, char** argv, T suite = {}) {
             std::cout << " failed with unknown error\n";
             status_code = 1;
           }
-
-          if constexpr (after_each_func) {
-            runAfterEach([&suite]() { suite.[:*after_each_func:](); });
-          }
-        }
-      } else if constexpr (t == ^^ParameterizeTemplate) {
-        parameterized = true;
-
-        static constexpr auto template_args =
-            std::define_static_array(std::meta::template_arguments_of(std::meta::type_of(a)));
-        static constexpr auto num_sets = [:template_args[0]:];
-
-        std::cout << "Running parameterized test " << current_test_name << " with " << num_sets
-                  << " parameter sets\n";
-
-        for (const auto& param :
-             std::meta::extract<
-                 typename[:std::meta::substitute(^^ParameterizeTemplate, template_args):]>(a)
-                 .parameters) {
-          if constexpr (before_each_func) {
-            if (!runBeforeEach([&suite]() { suite.[:*before_each_func:](); })) {
-              continue;
-            }
-          }
-
-          std::cout << "\t- <";
-
-          with_indices<std::tuple_size_v<typename decltype(param)::TupleType>>([&](auto... Is) {
-            ((std::cout << std::to_string(param.s.template get<Is>())), ...);
-          });
-          std::cout << "> -- ";
-
-          runTest([&suite, test, param]() {
-            return with_indices<std::tuple_size_v<typename decltype(param)::TupleType>>(
-                [&](auto... Is) { return suite.[:test:](param.s.template get<Is>()...); });
-          });
 
           if constexpr (after_each_func) {
             runAfterEach([&suite]() { suite.[:*after_each_func:](); });
@@ -476,8 +465,8 @@ int test(int argc, char** argv, T suite = {}) {
     } else {
       if (!parameterized) {
         std::cout << "Warning: Test " << current_test_name
-                  << " did not execute because it has required arguments that were not given via "
-                     "'Paremterized' annotation.\n";
+                  << " did not execute because it has required arguments that were not given via '"
+                     "Parameterized' annotation.\n";
       }
     }
 
@@ -499,4 +488,5 @@ int test(int argc, char** argv, T suite = {}) {
 
   return status_code;
 }
+
 }  // namespace annotest
