@@ -112,7 +112,7 @@ export void expectNull(auto ptr) {
 
 export template <typename Func>
 void expectContractViolation(Func f) {
-  if constexpr (!std::is_same_v<decltype(f()), void>) {
+  if constexpr (!std::is_void_v<std::invoke_result_t<Func>>) {
     auto result = f();
     if (!annotest::contract_violation_occurred) {
       throw Abort("Expectation failed: expected contract violation, but it was not detected");
@@ -126,13 +126,13 @@ void expectContractViolation(Func f) {
 }
 
 export template <typename Func>
-void expectNoContractViolation(Func f) {
-  if constexpr (!std::is_same_v<decltype(f()), void>) {
+auto expectNoContractViolation(Func f) {
+  if constexpr (!std::is_void_v<std::invoke_result_t<Func>>) {
     auto result = f();
     if (annotest::contract_violation_occurred) {
       throw Abort("Expectation failed: expected no contract violation, but one was detected");
     }
-    return;
+    return result;
   }
   f();
   if (annotest::contract_violation_occurred) {

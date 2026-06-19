@@ -112,7 +112,7 @@ export void assertNull(auto ptr) {
 
 export template <typename Func>
 auto assertContractViolation(Func f) {
-  if constexpr (!std::is_same_v<decltype(f()), void>) {
+  if constexpr (!std::is_void_v<std::invoke_result_t<Func>>) {
     auto result = f();
     if (!annotest::contract_violation_occurred) {
       throw Error("Assertion failed: expected contract violation, but it was not detected");
