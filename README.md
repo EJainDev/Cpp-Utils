@@ -62,7 +62,7 @@ See the [full documentation](https://annotest.readthedocs.io/) for API reference
 
 ## Installation
 
-### CMake FetchContent (recommended for consumers)
+### CMake FetchContent (recommended)
 
 ```cmake
 FetchContent_Declare(
@@ -91,7 +91,7 @@ cmake --build build
 cmake --install build
 ```
 
-Consumers then use:
+Then use:
 
 ```cmake
 find_package(AnnoTest REQUIRED)
@@ -262,6 +262,8 @@ Planned:
 - ⏳ Windows support (death tests via spawn)
 - ⏳ CI coverage across more compiler versions
 - ⏳ Richer failure message formatting
+- ⏳ More features
+- ⏳ Better test naming
 
 > [!NOTE]
 > The API may change before the first stable release.
