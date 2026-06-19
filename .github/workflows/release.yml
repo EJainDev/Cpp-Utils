@@ -1,0 +1,56 @@
+name: Release
+
+on:
+    push:
+        tags:
+            - "v*"
+
+jobs:
+    release:
+        runs-on: ubuntu-24.04
+        container:
+            image: gcc:16.1
+        steps:
+            - name: Install CMake
+              run: |
+                  apt update
+                  apt install -y wget tar ninja-build
+
+                  wget https://github.com/Kitware/CMake/releases/download/v4.3.3/cmake-4.3.3-linux-x86_64.tar.gz
+
+                  tar -xzf cmake-4.3.3-linux-x86_64.tar.gz -C /opt
+
+                  ln -s /opt/cmake-4.3.3-linux-x86_64/bin/* /usr/local/bin/
+
+            - name: Checkout Project
+              uses: actions/checkout@v6.0.3
+
+            - name: Build Project
+              uses: threeal/cmake-action@v2.1.0
+              with:
+                  build-dir: build
+                  generator: Ninja
+                  c-compiler: gcc
+                  cxx-compiler: g++
+                  options: |
+                      BUILD_TESTS=ON
+                      CMAKE_BUILD_TYPE=Release
+
+            - name: Install package
+              run: |
+                  cmake --install build --prefix package
+
+            - name: Add metadata
+              run: |
+                  cp README.md package/
+                  cp LICENSE package/
+
+            - name: Archive
+              run: |
+                  tar -czf annotest-${GITHUB_REF_NAME}.tar.gz package
+
+            - name: Create release
+              uses: softprops/action-gh-release@v2
+              with:
+                  files: |
+                      annotest-${GITHUB_REF_NAME}.tar.gz
