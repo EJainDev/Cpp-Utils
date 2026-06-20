@@ -18,6 +18,15 @@
             }
         },
         {
+            "name": "test-base-gcc-16.1",
+            "hidden": true,
+            "inherits": "base-gcc-16.1",
+            "description": "A preset with Ninja and GCC 16.1 for testing",
+            "cacheVariables": {
+                "BUILD_TESTS": "ON"
+            }
+        },
+        {
             "name": "debug-gcc-16.1",
             "displayName": "Debug (GCC 16.1 & Ninja)",
             "inherits": "base-gcc-16.1",
@@ -36,6 +45,26 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
+        },
+        {
+            "name": "test-debug-gcc-16-1",
+            "displayName": "Test Debug (GCC 16.1 & Ninja)",
+            "inherits": "test-base-gcc-16.1",
+            "description": "A debug preset with Ninja and GCC 16.1 for testing",
+            "binaryDir": "${sourceDir}/build/test-debug",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "test-release-gcc-16-1",
+            "displayName": "Test Release (GCC 16.1 & Ninja)",
+            "inherits": "test-base-gcc-16.1",
+            "description": "A release preset with Ninja and GCC 16.1 for testing",
+            "binaryDir": "${sourceDir}/build/test-release",
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
         }
     ],
     "buildPresets": [
@@ -48,6 +77,16 @@
             "name": "build-release",
             "displayName": "Build Release",
             "configurePreset": "release-gcc-16.1"
+        },
+        {
+            "name": "build-test-debug",
+            "displayName": "Build Test Debug",
+            "configurePreset": "test-debug-gcc-16-1"
+        },
+        {
+            "name": "build-test-release",
+            "displayName": "Build Test Release",
+            "configurePreset": "test-release-gcc-16-1"
         }
     ]
 }
