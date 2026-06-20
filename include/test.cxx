@@ -325,8 +325,18 @@ int test(int argc, char** argv, T suite = {}) {
     constexpr auto test = test_info.test;
     constexpr auto current_test_name = test_info.name;
     constexpr auto disabled = test_info.disabled;
-    if (!test_name.empty() && std::string(current_test_name) != test_name) {
-      continue;
+    constexpr auto parameterized = test_info.parameterized;
+    int parameterize_target_idx = -1;
+    if constexpr (!parameterized) {
+      if (!test_name.empty() && std::string(current_test_name) != test_name) {
+        continue;
+      }
+    } else {
+      if (!test_name.empty() &&
+          std::string(current_test_name) != test_name.substr(0, test_name.find_last_of('.'))) {
+        continue;
+      }
+      parameterize_target_idx = std::stoi(test_name.substr(test_name.find_last_of('.') + 1)) - 1;
     }
 
     if constexpr (disabled) {
@@ -339,7 +349,6 @@ int test(int argc, char** argv, T suite = {}) {
     OS requiredOS = OS::Unknown;
     static constexpr auto annotations = std::define_static_array(getAnnotations(test));
 
-    bool parameterized = false;
     bool os_message_printed = false;
 
     template for (constexpr auto a : annotations) {
@@ -393,8 +402,6 @@ int test(int argc, char** argv, T suite = {}) {
       constexpr auto t = std::meta::template_of(std::meta::type_of(a));
 
       if constexpr (t == ^^Parameterize) {
-        parameterized = true;
-
         static constexpr auto template_args =
             std::define_static_array(std::meta::template_arguments_of(std::meta::type_of(a)));
         static constexpr auto num_sets = [:template_args[0]:];
@@ -409,9 +416,16 @@ int test(int argc, char** argv, T suite = {}) {
                              .parameters[0]
                              .s)>());
 
+        int parameterize_idx = 0;
         for (const auto param :
              std::meta::extract<typename[:std::meta::substitute(^^Parameterize, template_args):]>(a)
                  .parameters) {
+          if (parameterize_target_idx != -1 && parameterize_idx != parameterize_target_idx) {
+            ++parameterize_idx;
+            continue;
+          }
+          ++parameterize_idx;
+
           contract_violation_occurred = false;
 
           if constexpr (before_each_func) {
@@ -454,11 +468,15 @@ int test(int argc, char** argv, T suite = {}) {
           if constexpr (after_each_func) {
             runAfterEach([&suite]() { suite.[:*after_each_func:](); });
           }
+
+          if (parameterize_target_idx != -1) {
+            break;
+          }
         }
       }
     }
 
-    if (parameterized) {
+    if constexpr (parameterized) {
       continue;
     }
 
