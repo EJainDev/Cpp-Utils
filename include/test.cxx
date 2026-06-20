@@ -103,12 +103,21 @@ consteval auto getTests() {
   std::vector<InternalTest> tests;
 
   template for (constexpr auto m : members) {
+    bool test_found = false;
+    bool lifecycle_found = false;
+
     if constexpr (std::meta::has_identifier(m)) {
       static constexpr auto annotations = std::define_static_array(getAnnotations(m));
       template for (constexpr auto a : annotations) {
         constexpr auto t = std::meta::template_of(std::meta::type_of(a));
 
         if constexpr (t == ^^Test) {
+          if (lifecycle_found) {
+            throw std::logic_error(
+                std::format("Cannot have a Test annotation on a BeforeEach method. Method name: {}",
+                            std::meta::identifier_of(m)));
+          }
+
           static constexpr auto template_args =
               std::define_static_array(std::meta::template_arguments_of(std::meta::type_of(a)));
 
@@ -122,33 +131,49 @@ consteval auto getTests() {
               !test_info.isEmpty() ? std::define_static_string(str_test_name)
                                    : std::define_static_string(std::meta::identifier_of(m));
           tests.emplace_back(m, final_test_name, test_info.disabled);
+          test_found = true;
         } else if constexpr (t == ^^BeforeEach) {
           if (before_each_func) {
+            throw std::logic_error(std::format(
+                "Duplicate BeforeEach annotation detected. First one at {} and second one at {}.",
+                std::meta::identifier_of(*before_each_func), std::meta::identifier_of(m)));
+          } else if (test_found) {
             throw std::logic_error(
-                "Duplicate BeforeEach annotation detected. Only one BeforeEach function is allowed "
-                "per test suite.");
+                std::format("BeforeEach cannot be declared on a Test method. Method name: {}",
+                            std::meta::identifier_of(m)));
           }
           before_each_func = m;
         } else if constexpr (t == ^^AfterEach) {
           if (after_each_func) {
+            throw std::logic_error(std::format(
+                "Duplicate AfterEach annotation detected. First one at {} and second one at {}.",
+                std::meta::identifier_of(*after_each_func), std::meta::identifier_of(m)));
+          } else if (test_found) {
             throw std::logic_error(
-                "Duplicate AfterEach annotation detected. Only one AfterEach function is allowed "
-                "per test suite.");
+                std::format("AfterEach cannot be declared on a Test method. Method name: {}",
+                            std::meta::identifier_of(m)));
           }
           after_each_func = m;
         } else if constexpr (t == ^^BeforeAll) {
           if (before_all_func) {
+            throw std::logic_error(std::format(
+                "Duplicate BeforeAll annotation detected. First one at {} and second one at {}.",
+                std::meta::identifier_of(*before_all_func), std::meta::identifier_of(m)));
+          } else if (test_found) {
             throw std::logic_error(
-                "Duplicate BeforeAll annotation detected. Only one BeforeAll function is allowed "
-                "per "
-                "test suite.");
+                std::format("BeforeAll cannot be declared on a Test method. Method name: {}",
+                            std::meta::identifier_of(m)));
           }
           before_all_func = m;
         } else if constexpr (t == ^^AfterAll) {
           if (after_all_func) {
+            throw std::logic_error(std::format(
+                "Duplicate AfterAll annotation detected. First one at {} and second one at {}.",
+                std::meta::identifier_of(*after_all_func), std::meta::identifier_of(m)));
+          } else if (test_found) {
             throw std::logic_error(
-                "Duplicate AfterAll annotation detected. Only one AfterAll function is allowed "
-                "per test suite.");
+                std::format("AfterAll cannot be declared on a Test method. Method name: {}",
+                            std::meta::identifier_of(m)));
           }
           after_all_func = m;
         }
