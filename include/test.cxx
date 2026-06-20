@@ -178,6 +178,30 @@ bool runBeforeEach(const auto& func) {
   return true;
 }
 
+bool runTest(const auto& func) {
+  try {
+    auto start = std::chrono::system_clock::now();
+    func();
+    auto end = std::chrono::system_clock::now();
+
+    auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+    std::cout << "Passed in " << duration.count() / 1'000'000.0 << " ms\n";
+  } catch (const Error& e) {
+    std::cout << "Failed with error: " << e.message() << '\n';
+    return false;
+  } catch (const Abort& e) {
+    std::cout << "Aborted with message: " << e.message() << '\n';
+    return false;
+  } catch (const std::exception& e) {
+    std::cout << "Failed with (uncaught) exception message: " << e.what() << '\n';
+    return false;
+  } catch (...) {
+    std::cout << "Failed with unknown error\n";
+    return false;
+  }
+  return true;
+}
+
 void runAfterEach(const auto& func) {
   try {
     func();
@@ -362,6 +386,8 @@ int test(int argc, char** argv, T suite = {}) {
         for (const auto param :
              std::meta::extract<typename[:std::meta::substitute(^^Parameterize, template_args):]>(a)
                  .parameters) {
+          contract_violation_occurred = false;
+
           if constexpr (before_each_func) {
             if (!runBeforeEach([&suite]() { suite.[:*before_each_func:](); })) {
               continue;
@@ -380,6 +406,10 @@ int test(int argc, char** argv, T suite = {}) {
             auto end = std::chrono::system_clock::now();
 
             auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+            if (contract_violation_occurred) {
+              throw Error("Contract violation occurred during test execution");
+            }
 
             std::cout << " passed in " << duration.count() / 1'000'000.0 << " ms\n";
           } catch (const Error& e) {
@@ -420,6 +450,10 @@ int test(int argc, char** argv, T suite = {}) {
         auto end = std::chrono::system_clock::now();
 
         auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+
+        if (contract_violation_occurred) {
+          throw Error("Contract violation occurred during test execution");
+        }
 
         std::cout << "Passed in " << duration.count() / 1'000'000.0 << " ms\n";
       } catch (const Error& e) {
