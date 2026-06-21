@@ -8,7 +8,7 @@ struct AssertionTestSuite {
   template <typename A = int, typename B = int>
   [[
     = Test{},
-    = makeTParamMatrix(
+    = dualParameterize(
         Pair<int, int>::InitM(
             tuple(3, 3), tuple(0, 0), tuple(-1, -1), tuple(1, 1),
             tuple(std::numeric_limits<int>::max(), std::numeric_limits<int>::max()),

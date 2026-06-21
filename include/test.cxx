@@ -68,7 +68,7 @@ struct Parameterize {
 export template <typename... Args>
 struct ParameterizeTemplate {};
 
-export template <typename... Pairs>
+template <typename... Pairs>
 struct ParameterizeMatrix {
   Tuple<Pairs...> sets;
 };
@@ -80,24 +80,14 @@ struct Pair {
     Values params;
   };
 
-  template <typename... Values>
-  static constexpr auto Init(Values... values) {
-    return InitI<Tuple<Values...>>{.params = Tuple{values...}};
-  }
-
   template <typename... ValueTuples>
   static constexpr auto InitM(ValueTuples... values) {
     return Tuple{InitI<ValueTuples>{.params = values}...};
   }
 };
 
-export template <typename... Pairs>
-consteval auto makeParameterizationMatrix(Pairs... pairs) {
-  return ParameterizeMatrix<Pairs...>{.sets = Tuple{pairs...}};
-}
-
 export template <typename... PairTuples>
-consteval auto makeTParamMatrix(PairTuples... pair_tuples) {
+consteval auto dualParameterize(PairTuples... pair_tuples) {
   return ParameterizeMatrix{.sets = tuple_cat(pair_tuples...)};
 }
 
