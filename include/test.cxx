@@ -169,6 +169,16 @@ consteval auto getTests() {
               static constexpr auto template_args = std::define_static_array(
                   std::meta::template_arguments_of(std::meta::type_of(a2)));
               num_parameterizations = [:template_args[0]:];
+            } else if constexpr (t2 == ^^ParameterizeTemplate) {
+              parameterized = true;
+
+              constexpr auto parameterize_args = std::define_static_array(
+                  std::meta::template_arguments_of(std::meta::type_of(a2)));
+              constexpr auto total_args = parameterize_args.size();
+              constexpr auto template_parameters =
+                  std::define_static_array(std::meta::template_arguments_of(member));
+              constexpr auto args_per_batch = template_parameters.size();
+              num_parameterizations = total_args / args_per_batch;
             }
           }
           tests.emplace_back(member, m, final_test_name, test_info.disabled, parameterized,
