@@ -531,7 +531,7 @@ int test(int argc, char** argv, T suite = {}) {
           template for (constexpr auto m : param_members) {
             std::print("{}", param.s.[:m:]);
             ++i;
-            if (i < num_sets - 1) {
+            if (i < param_members.size() - 1) {
               std::print(", ");
             }
           }
@@ -734,7 +734,7 @@ int test(int argc, char** argv, T suite = {}) {
             int i = 0;
             template for (constexpr auto m : param_members) {
               std::print("{}", physical_pair.params.s.[:m:]);
-              if (i < num_sets) {
+              if (i < param_members.size() - 1) {
                 std::print(", ");
               }
               ++i;
