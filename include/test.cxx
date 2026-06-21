@@ -81,6 +81,11 @@ struct ParameterizePair {
   };
 };
 
+export template <typename... Pairs>
+consteval auto makeParameterizationMatrix(Pairs... pairs) {
+  return ParameterizeMatrix<Pairs...>{.sets = Tuple{pairs...}};
+}
+
 export template <int N>
 struct RequiresOS {
   OS os[N];
