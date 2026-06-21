@@ -68,6 +68,19 @@ struct Parameterize {
 export template <typename... Args>
 struct ParameterizeTemplate {};
 
+export template <typename... Pairs>
+struct ParameterizeMatrix {
+  Tuple<Pairs...> sets;
+};
+
+export template <typename... Types>
+struct ParameterizePair {
+  template <typename Values>
+  struct WithValues {
+    Values params;
+  };
+};
+
 export template <int N>
 struct RequiresOS {
   OS os[N];
@@ -266,6 +279,16 @@ consteval auto createArgBatchesIterable(const auto args_per_batch, const auto nu
     iterable.push_back(i * args_per_batch);
   }
   return std::define_static_array(iterable);
+}
+
+template <std::ranges::input_range R>
+consteval auto range_to_string(R&& range) {
+  std::string s;
+  for (const auto& val : range) {
+    s += std::meta::display_string_of(val);
+  }
+
+  return s;
 }
 
 export template <typename T>
@@ -574,6 +597,108 @@ int test(int argc, char** argv, T suite = {}) {
             auto start = std::chrono::system_clock::now();
             constexpr auto expanded_test = std::meta::substitute(raw_test, batch);
             suite.[:expanded_test:]();
+            auto end = std::chrono::system_clock::now();
+
+            auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+            total_duration += duration;
+
+            if (contract_violation_occurred) {
+              throw Error("Contract violation occurred during test execution");
+            }
+
+            std::println("passed in {:.3f} ms", duration.count() / 1'000'000.0);
+            ++passed;
+          } catch (const Error& e) {
+            std::println("failed with error: {}", e.message());
+            status_code = 1;
+          } catch (const Abort& e) {
+            std::println("aborted with message: {}", e.message());
+          } catch (const std::exception& e) {
+            std::println("failed with (uncaught) exception message: {}", e.what());
+            status_code = 1;
+          } catch (...) {
+            std::println("failed with unknown error");
+            status_code = 1;
+          }
+
+          if constexpr (after_each_func) {
+            if (verbosity > 1) {
+              std::println("\tRunning teardown function {}",
+                           std::meta::identifier_of(*after_each_func));
+            }
+            runAfterEach([&suite]() { suite.[:*after_each_func:](); });
+          }
+        }
+
+        std::println("Finished in {:.3f} ms with {}/{} tests passed",
+                     total_duration.count() / 1'000'000.0, passed, num_sets);
+      } else if constexpr (t == ^^ParameterizeMatrix) {
+        constexpr auto parameterize_matrix =
+            std::meta::extract<typename[:std::meta::substitute(^^ParameterizeMatrix,
+                                                               std::define_static_array(
+                                                                   std::meta::template_arguments_of(
+                                                                       std::meta::type_of(a)))):]>(
+                a);
+        constexpr auto num_sets = parameterize_matrix.sets.getSizeof();
+
+        std::println("Running parameterized template and parameter test \"{}\" with {} sets:",
+                     current_test_name, num_sets);
+
+        static constexpr auto member_pairs = std::define_static_array(
+            getNonstaticDataMembers<decltype(parameterize_matrix.sets.s)>());
+
+        std::chrono::nanoseconds total_duration(0);
+        int passed = 0;
+
+        template for (constexpr auto pair : member_pairs) {
+          if constexpr (before_each_func) {
+            if (verbosity > 1) {
+              std::println("\tRunning setup function {}",
+                           std::meta::identifier_of(*before_each_func));
+            }
+            if (!runBeforeEach([&suite]() { suite.[:*before_each_func:](); })) {
+              continue;
+            }
+          }
+
+          try {
+            constexpr auto parent_pair = std::meta::parent_of(std::meta::type_of(pair));
+            constexpr auto expanded_test = std::meta::substitute(
+                raw_test, std::define_static_array(std::meta::template_arguments_of(parent_pair)));
+            static constexpr auto template_args =
+                std::define_static_array(std::meta::template_arguments_of(parent_pair));
+
+            constexpr auto physical_pair = parameterize_matrix.sets.s.[:pair:];
+            static constexpr auto param_members = std::define_static_array(
+                getNonstaticDataMembers<decltype(physical_pair.params.s)>());
+
+            std::print("\t <");
+            int idx = 0;
+            static constexpr auto max_idx = template_args.size() - 1;
+            template for (constexpr auto param : template_args) {
+              std::print("{}", std::meta::display_string_of(param));
+              if (idx < max_idx) {
+                std::print(", ");
+              }
+              ++idx;
+            }
+            std::print(">");
+            std::print("(");
+            int i = 0;
+            template for (constexpr auto m : param_members) {
+              std::print("{}", physical_pair.params.s.[:m:]);
+              if (i < num_sets) {
+                std::print(", ");
+              }
+              ++i;
+            }
+            std::print(") -- ");
+
+            auto start = std::chrono::system_clock::now();
+            with_indices<physical_pair.params.getSizeof()>([&](auto... Is) {
+              return suite.[:expanded_test:](physical_pair.params.s.[:param_members[Is]:]...);
+            });
+
             auto end = std::chrono::system_clock::now();
 
             auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);

@@ -10,7 +10,8 @@ template <std::size_t I>
 struct member_name {
   // NOTE: This template only handles indices up to 9999. For I >= 10000 the generated names
   // will overflow the character array and produce undefined behavior. When using tuple() with
-  // more than 9999 elements, consider splitting into multiple smaller tuples.
+  // more than 9999 elements, consider splitting into multiple smaller tuples. This should never be
+  // the case. Might want to consider why you're creating a test with 9999+ parameters...
   static constexpr auto internal_value() {
     if constexpr (I < 10) {
       return std::array<char, 3>{'m', static_cast<char>('0' + I), '\0'};
@@ -22,11 +23,12 @@ struct member_name {
                                  static_cast<char>('0' + (I / 10) % 10),
                                  static_cast<char>('0' + I % 10), '\0'};
     } else {
-      return std::array<char, 7>{
-          'm', static_cast<char>('0' + I / 1000),
-          static_cast<char>('0' + (I / 100) % 10),
-          static_cast<char>('0' + (I / 10) % 10),
-          static_cast<char>('0' + I % 10), '\0'};
+      return std::array<char, 7>{'m',
+                                 static_cast<char>('0' + I / 1000),
+                                 static_cast<char>('0' + (I / 100) % 10),
+                                 static_cast<char>('0' + (I / 10) % 10),
+                                 static_cast<char>('0' + I % 10),
+                                 '\0'};
     }
   }
 
@@ -65,4 +67,18 @@ template <typename... Ts>
 Tuple(Ts...) -> Tuple<Ts...>;
 
 export consteval auto tuple(auto... args) { return Tuple<decltype(args)...>{.s = {args...}}; }
+
+template <typename T, std::size_t... Is>
+constexpr auto unpack_tuple(T&& tuple, std::index_sequence<Is...>) {
+  return std::forward_as_tuple(tuple.s.[:T::nsdms[Is]:]...);
+}
+
+template <typename... Tuples>
+constexpr auto combine(Tuples&&... tuples) {
+  return std::apply(
+      [](auto&&... values) { return Tuple{std::forward<decltype(values)>(values)...}; },
+      std::tuple_cat(
+          unpack_tuple(std::forward<Tuples>(tuples),
+                       std::make_index_sequence<std::remove_cvref_t<Tuples>::getSizeof()>{})...));
+}
 }  // namespace annotest
