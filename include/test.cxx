@@ -547,8 +547,6 @@ int test(int argc, char** argv, T suite = {}) {
           } catch (const Error& e) {
             std::println("failed with error {}", e.message());
             status_code = 1;
-          } catch (const Abort& e) {
-            std::println("aborted with message: {}", e.message());
           } catch (const std::exception& e) {
             std::println("failed with (uncaught) exception message: {}", e.what());
             status_code = 1;
@@ -639,8 +637,6 @@ int test(int argc, char** argv, T suite = {}) {
           } catch (const Error& e) {
             std::println("failed with error: {}", e.message());
             status_code = 1;
-          } catch (const Abort& e) {
-            std::println("aborted with message: {}", e.message());
           } catch (const std::exception& e) {
             std::println("failed with (uncaught) exception message: {}", e.what());
             status_code = 1;
@@ -752,8 +748,6 @@ int test(int argc, char** argv, T suite = {}) {
           } catch (const Error& e) {
             std::println("failed with error: {}", e.message());
             status_code = 1;
-          } catch (const Abort& e) {
-            std::println("aborted with message: {}", e.message());
           } catch (const std::exception& e) {
             std::println("failed with (uncaught) exception message: {}", e.what());
             status_code = 1;
@@ -807,8 +801,6 @@ int test(int argc, char** argv, T suite = {}) {
       } catch (const Error& e) {
         std::println("Failed with error: {}", e.message());
         status_code = 1;
-      } catch (const Abort& e) {
-        std::println("Aborted with message: {}", e.message());
       } catch (const std::exception& e) {
         std::println("Failed with (uncaught) exception message: {}", e.what());
         status_code = 1;

@@ -14,16 +14,4 @@ class Error {
  private:
   std::string message_;
 };
-
-// An exception class for abort messages that should not be treated as test failures (e.g. failed
-// setup)
-class Abort {
- public:
-  explicit Abort(std::string message) : message_(std::move(message)) {}
-
-  const std::string& message() const { return message_; }
-
- private:
-  std::string message_;
-};
 }  // namespace annotest
