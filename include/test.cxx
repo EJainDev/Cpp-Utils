@@ -76,7 +76,7 @@ struct ParameterizeMatrix {
 export template <typename... Types>
 struct ParameterizePair {
   template <typename Values>
-  struct WithValues {
+  struct Init {
     Values params;
   };
 };
