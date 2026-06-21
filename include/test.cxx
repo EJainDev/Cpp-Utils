@@ -233,10 +233,10 @@ bool runBeforeEach(const auto& func) {
   try {
     func();
   } catch (const std::exception& e) {
-    std::cout << "BeforeEach function failed with exception: " << e.what() << '\n';
+    std::println("BeforeEach function failed with exception: {}", e.what());
     return false;
   } catch (...) {
-    std::cout << "BeforeEach function failed with unknown error\n";
+    std::println("BeforeEach function failed with unknown error");
     return false;
   }
   return true;
@@ -246,9 +246,9 @@ void runAfterEach(const auto& func) {
   try {
     func();
   } catch (const std::exception& e) {
-    std::cout << "AfterEach function failed with exception: " << e.what() << '\n';
+    std::println("AfterEach function failed with exception: {}", e.what());
   } catch (...) {
-    std::cout << "AfterEach function failed with unknown error\n";
+    std::println("AfterEach function failed with unknown error");
   }
 }
 
@@ -295,67 +295,70 @@ int test(int argc, char** argv, T suite = {}) {
 
   std::string test_name;
 
+  int verbosity = 1;
+
   // Check mode
   std::vector<std::string> args(argv + 1, argv + argc);
   int i = 0;
   while (i < static_cast<int>(args.size())) {
     const auto& arg = args[i];
     if (arg == "--list") {
-      std::cout << std::meta::identifier_of(^^T) << ".\n";
+      std::println("{}.", std::meta::identifier_of(^^T));
       template for (constexpr auto test_info : tests) {
         constexpr auto current_test_name = test_info.name;
         constexpr auto parameterized = test_info.parameterized;
         constexpr auto num_parameterizations = test_info.num_parameterizations;
         if constexpr (!parameterized) {
-          std::cout << "  " << current_test_name << '\n';
+          std::println("  {}", current_test_name);
         } else {
           for (int i = 0; i < num_parameterizations; ++i) {
-            std::cout << "  " << current_test_name << "." << i + 1 << '\n';
+            std::println("  {}.{}", current_test_name, i + 1);
           }
         }
       }
       return 0;
     } else if (arg == "--test-name" && i + 1 < static_cast<int>(args.size())) {
-      std::string candidate = args[i + 1];
-      std::string full_name = std::string(std::meta::identifier_of(^^T)) + ".";
-      // Accept either the full qualified name "Suite.test_name" or just the test name "test_name"
-      if (candidate.starts_with(full_name)) {
-        test_name = candidate.substr(full_name.size());
-      } else {
-        constexpr auto starts_with_idx = std::string(std::meta::identifier_of(^^T)).size() + 1;
-        if (candidate.size() > static_cast<std::size_t>(starts_with_idx)) {
-          test_name = candidate.substr(starts_with_idx);
-        }
+      if (test_name != "") {
+        std::println("Warning: Multiple test name arguments provided. Using the last one: {}",
+                     args[i + 1]);
       }
+      test_name = args[i + 1];
+    } else if (arg.starts_with("-v")) {
+      verbosity = arg.size() - 1;  // Number of 'v's indicates verbosity level
     }
     ++i;
   }
+  std::println("Running test suite {} with verbosity level {}", std::meta::identifier_of(^^T),
+               verbosity);
 
   // The BeforeAll function is run once before any tests, and if it fails, the entire suite is
   // aborted
   if constexpr (before_all_func) {
     constexpr auto func = before_all_func.value();
-    std::cout << "Running BeforeAll setup for suite " << std::meta::identifier_of(^^T) << '\n';
+    std::print("Running BeforeAll setup for suite {}\n", std::meta::identifier_of(^^T));
     try {
       suite.[:func:]();
     } catch (const std::exception& e) {
-      std::cout << "BeforeAll setup failed with exception: " << e.what() << ", aborting test suite "
-                << std::meta::identifier_of(^^T) << '\n';
+      std::println("BeforeAll setup failed with exception: {}, aborting test suite {}", e.what(),
+                   std::meta::identifier_of(^^T));
       return 1;  // Abort the entire test suite if BeforeAll setup fails
     } catch (...) {
-      std::cout << "BeforeAll setup failed with unknown error, aborting test suite "
-                << std::meta::identifier_of(^^T) << '\n';
+      std::println("BeforeAll setup failed with unknown error, aborting test suite {}",
+                   std::meta::identifier_of(^^T));
       return 1;  // Abort the entire test suite if BeforeAll setup fails
     }
   }
 
   template for (constexpr auto test_info : tests) {
-    contract_violation_occurred = false;
+    contract_violation_occurred = false;  // Reset contract flag before each test
+
     constexpr auto test = test_info.test;
     constexpr auto raw_test = test_info.raw_test;
     constexpr auto current_test_name = test_info.name;
     constexpr auto disabled = test_info.disabled;
     constexpr auto parameterized = test_info.parameterized;
+
+    // Get the test to run
     int parameterize_target_idx = -1;
     if constexpr (!parameterized) {
       if (!test_name.empty() && std::string(current_test_name) != test_name) {
@@ -370,8 +373,9 @@ int test(int argc, char** argv, T suite = {}) {
       }
     }
 
+    // Skip if disabled
     if constexpr (disabled) {
-      std::cout << "Skipping disabled test: " << current_test_name << '\n';
+      std::println("Skipping disabled test: {}", current_test_name);
       continue;
     }
 
@@ -382,7 +386,10 @@ int test(int argc, char** argv, T suite = {}) {
 
     bool os_message_printed = false;
 
+    // Check for OS level requirements
     template for (constexpr auto a : annotations) {
+      bool stop = false;
+
       constexpr auto t = std::meta::template_of(std::meta::type_of(a));
 
       // OS checks (RequiresOS / DisallowOS)
@@ -395,8 +402,9 @@ int test(int argc, char** argv, T suite = {}) {
                 .os;
         for (int i = 0; i < sizeof(osDetail) / sizeof(OS); ++i) {
           if (os != osDetail[i]) {
-            osRequirementFailed = true;
-            requiredOS = osDetail[i];
+            std::println("Current OS {} does not match required OS {}, skipping test {}",
+                         enum_to_string(os), enum_to_string(osDetail[i]), current_test_name);
+            stop = true;
             break;
           }
         }
@@ -409,36 +417,31 @@ int test(int argc, char** argv, T suite = {}) {
                 .os;
         for (int i = 0; i < sizeof(osDetail) / sizeof(OS); ++i) {
           if (os == osDetail[i]) {
-            osDisallowed = true;
+            std::println("Current OS {} is disallowed for test {}, skipping", enum_to_string(os),
+                         current_test_name);
+            stop = true;
             break;
           }
         }
       }
 
-      // Print OS skip message exactly once per test
-      if ((osRequirementFailed || osDisallowed) && !os_message_printed) {
-        os_message_printed = true;
-        if (osRequirementFailed) {
-          std::cout << "Skipping test " << current_test_name << " because the current OS "
-                    << enum_to_string(os) << " does not match the required OS of "
-                    << enum_to_string(requiredOS) << '\n';
-        } else if (osDisallowed) {
-          std::cout << "Skipping test " << current_test_name << " because the current OS "
-                    << enum_to_string(os) << " is disallowed.\n";
-        }
+      if (stop) {
+        break;
       }
     }
 
+    // Check for parameterization
     template for (constexpr auto a : annotations) {
       constexpr auto t = std::meta::template_of(std::meta::type_of(a));
 
+      // Regular, value parameterization
       if constexpr (t == ^^Parameterize) {
         static constexpr auto template_args =
             std::define_static_array(std::meta::template_arguments_of(std::meta::type_of(a)));
         static constexpr auto num_sets = [:template_args[0]:];
 
-        std::cout << "Running parameterized test " << current_test_name << " with " << num_sets
-                  << " parameter sets\n";
+        std::println("Running parameterized test {} with {} parameter sets", current_test_name,
+                     num_sets);
 
         static constexpr auto param_members = std::define_static_array(
             getNonstaticDataMembers<
@@ -448,6 +451,8 @@ int test(int argc, char** argv, T suite = {}) {
                              .s)>());
 
         int parameterize_idx = 0;
+        std::chrono::nanoseconds total_duration(0);
+        int passed = 0;
         for (const auto param :
              std::meta::extract<typename[:std::meta::substitute(^^Parameterize, template_args):]>(a)
                  .parameters) {
@@ -460,43 +465,57 @@ int test(int argc, char** argv, T suite = {}) {
           contract_violation_occurred = false;
 
           if constexpr (before_each_func) {
+            if (verbosity > 1) {
+              std::println("\tRunning setup function {}",
+                           std::meta::identifier_of(*before_each_func));
+            }
             if (!runBeforeEach([&suite]() { suite.[:*before_each_func:](); })) {
               continue;
             }
           }
 
+          std::print("\t (");
+          int i = 0;
           template for (constexpr auto m : param_members) {
-            std::cout << "\t- {" << std::to_string(param.s.[:m:]);
+            std::print("{}", param.s.[:m:]);
+            ++i;
+            if (i < num_sets - 1) {
+              std::print(", ");
+            }
           }
-          std::cout << "} -- ";
+          std::print(") -- ");
 
           try {
-            auto start = std::chrono::system_clock::now();
+            auto start = std::chrono::steady_clock::now();
             with_indices<param.getSizeof()>(
                 [&](auto... Is) { return suite.[:test:](param.s.[:param_members[Is]:]...); });
-            auto end = std::chrono::system_clock::now();
+            auto end = std::chrono::steady_clock::now();
 
             auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+            total_duration += duration;
 
             if (contract_violation_occurred) {
               throw Error("Contract violation occurred during test execution");
             }
 
-            std::cout << " passed in " << duration.count() / 1'000'000.0 << " ms\n";
+            std::println("passed in {:.3f} ms", duration.count() / 1'000'000.0);
+            ++passed;
           } catch (const Error& e) {
-            std::cout << " failed with error: " << e.message() << '\n';
+            std::println("failed with error {}", e.message());
             status_code = 1;
           } catch (const Abort& e) {
-            std::cout << " aborted with message: " << e.message() << '\n';
+            std::println("aborted with message: {}", e.message());
           } catch (const std::exception& e) {
-            std::cout << " failed with (uncaught) exception message: " << e.what() << '\n';
+            std::println("failed with (uncaught) exception message: {}", e.what());
             status_code = 1;
           } catch (...) {
-            std::cout << " failed with unknown error\n";
+            std::println("failed with unknown error\n");
             status_code = 1;
           }
 
           if constexpr (after_each_func) {
+            std::println("\tRunning teardown function {}",
+                         std::meta::identifier_of(*after_each_func));
             runAfterEach([&suite]() { suite.[:*after_each_func:](); });
           }
 
@@ -504,6 +523,9 @@ int test(int argc, char** argv, T suite = {}) {
             break;
           }
         }
+
+        std::println("Finished in {:.3f} ms with {}/{} tests passed",
+                     total_duration.count() / 1'000'000.0, passed, num_sets);
       } else if constexpr (t == ^^ParameterizeTemplate) {
         constexpr auto parameterize_args =
             std::define_static_array(std::meta::template_arguments_of(std::meta::type_of(a)));
@@ -515,12 +537,22 @@ int test(int argc, char** argv, T suite = {}) {
         static constexpr auto arg_batches_iterable =
             createArgBatchesIterable(args_per_batch, num_sets);
 
+        std::println("Running parameterized template test \"{}\" with {} parameter sets:",
+                     current_test_name, num_sets);
+
+        std::chrono::nanoseconds total_duration(0);
+        int passed = 0;
+
         template for (constexpr auto batch_iter : arg_batches_iterable) {
           contract_violation_occurred = false;
 
           static constexpr auto batch = createBatch(parameterize_args, batch_iter, args_per_batch);
 
           if constexpr (before_each_func) {
+            if (verbosity > 1) {
+              std::println("\tRunning setup function {}",
+                           std::meta::identifier_of(*before_each_func));
+            }
             if (!runBeforeEach([&suite]() { suite.[:*before_each_func:](); })) {
               continue;
             }
@@ -545,29 +577,38 @@ int test(int argc, char** argv, T suite = {}) {
             auto end = std::chrono::system_clock::now();
 
             auto duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start);
+            total_duration += duration;
 
             if (contract_violation_occurred) {
               throw Error("Contract violation occurred during test execution");
             }
 
-            std::cout << " passed in " << duration.count() / 1'000'000.0 << " ms\n";
+            std::println("passed in {:.3f} ms", duration.count() / 1'000'000.0);
+            ++passed;
           } catch (const Error& e) {
-            std::cout << " failed with error: " << e.message() << '\n';
+            std::println("failed with error: {}", e.message());
             status_code = 1;
           } catch (const Abort& e) {
-            std::cout << " aborted with message: " << e.message() << '\n';
+            std::println("aborted with message: {}", e.message());
           } catch (const std::exception& e) {
-            std::cout << " failed with (uncaught) exception message: " << e.what() << '\n';
+            std::println("failed with (uncaught) exception message: {}", e.what());
             status_code = 1;
           } catch (...) {
-            std::cout << " failed with unknown error\n";
+            std::println("failed with unknown error");
             status_code = 1;
           }
 
           if constexpr (after_each_func) {
+            if (verbosity > 1) {
+              std::println("\tRunning teardown function {}",
+                           std::meta::identifier_of(*after_each_func));
+            }
             runAfterEach([&suite]() { suite.[:*after_each_func:](); });
           }
         }
+
+        std::println("Finished in {:.3f} ms with {}/{} tests passed",
+                     total_duration.count() / 1'000'000.0, passed, num_sets);
       }
     }
 
@@ -576,7 +617,7 @@ int test(int argc, char** argv, T suite = {}) {
     }
 
     if constexpr (notHasRequiredParameter<test>()) {
-      std::cout << "Running test: " << current_test_name << '\n';
+      std::println("Running test: {}", current_test_name);
       if constexpr (before_each_func) {
         if (!runBeforeEach([&suite]() { suite.[:*before_each_func:](); })) {
           continue;
@@ -594,17 +635,17 @@ int test(int argc, char** argv, T suite = {}) {
           throw Error("Contract violation occurred during test execution");
         }
 
-        std::cout << "Passed in " << duration.count() / 1'000'000.0 << " ms\n";
+        std::println("Passed in {:.3f} ms", duration.count() / 1'000'000.0);
       } catch (const Error& e) {
-        std::cout << "Failed with error: " << e.message() << '\n';
+        std::println("Failed with error: {}", e.message());
         status_code = 1;
       } catch (const Abort& e) {
-        std::cout << "Aborted with message: " << e.message() << '\n';
+        std::println("Aborted with message: {}", e.message());
       } catch (const std::exception& e) {
-        std::cout << "Failed with (uncaught) exception message: " << e.what() << '\n';
+        std::println("Failed with (uncaught) exception message: {}", e.what());
         status_code = 1;
       } catch (...) {
-        std::cout << "Failed with unknown error\n";
+        std::println("Failed with unknown error");
         status_code = 1;
       }
 
@@ -613,9 +654,10 @@ int test(int argc, char** argv, T suite = {}) {
       }
     } else {
       if (!parameterized) {
-        std::cout << "Warning: Test " << current_test_name
-                  << " did not execute because it has required arguments that were not given via '"
-                     "Parameterized' annotation.\n";
+        std::println(
+            "Warning: Test {} did not execute because it has required arguments that were not "
+            "given via 'Parameterized' annotation.",
+            current_test_name);
       }
     }
 
@@ -626,13 +668,13 @@ int test(int argc, char** argv, T suite = {}) {
 
   if constexpr (after_all_func) {
     constexpr auto func = after_all_func.value();
-    std::cout << "Running AfterAll teardown for suite " << std::meta::identifier_of(^^T) << '\n';
+    std::println("Running AfterAll teardown for suite {}", std::meta::identifier_of(^^T));
     try {
       suite.[:func:]();
     } catch (const std::exception& e) {
-      std::cout << "AfterAll teardown failed with exception: " << e.what() << '\n';
+      std::println("AfterAll teardown failed with exception: {}", e.what());
     } catch (...) {
-      std::cout << "AfterAll teardown failed with unknown error\n";
+      std::println("AfterAll teardown failed with unknown error");
     }
   }
 
