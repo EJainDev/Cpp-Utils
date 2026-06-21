@@ -96,7 +96,7 @@ template <class... Tuples>
 constexpr std::size_t tuple_cat_size_v = (tuple_size_v<std::remove_reference_t<Tuples>>() + ...);
 
 template <std::size_t I, class Tuple>
-decltype(auto) get_tuple_element(Tuple&& t) {
+constexpr decltype(auto) get_tuple_element(Tuple&& t) {
   return t.template get<I>();
 }
 
@@ -104,7 +104,7 @@ decltype(auto) get_tuple_element(Tuple&& t) {
 // Map global index -> (tuple index, local index)
 // -----------------------------
 template <std::size_t I, class First, class... Rest>
-decltype(auto) tuple_cat_get(First&& first, Rest&&... rest) {
+constexpr decltype(auto) tuple_cat_get(First&& first, Rest&&... rest) {
   constexpr std::size_t first_size = tuple_size_v<std::remove_reference_t<First>>();
 
   if constexpr (I < first_size) {
@@ -116,12 +116,12 @@ decltype(auto) tuple_cat_get(First&& first, Rest&&... rest) {
 
 // Base case: single tuple
 template <std::size_t I, class Last>
-decltype(auto) tuple_cat_get(Last&& last) {
+constexpr decltype(auto) tuple_cat_get(Last&& last) {
   return last.template get<I>();
 }
 
 template <class... Tuples, std::size_t... I>
-auto tuple_cat_impl(std::index_sequence<I...>, Tuples&&... tuples) {
+constexpr auto tuple_cat_impl(std::index_sequence<I...>, Tuples&&... tuples) {
   static constexpr auto all_types = getAllTypes<std::remove_reference_t<Tuples>...>();
   using Result = typename[:std::meta::substitute(^^Tuple, all_types):];
 
@@ -129,7 +129,7 @@ auto tuple_cat_impl(std::index_sequence<I...>, Tuples&&... tuples) {
 }
 
 export template <class... Tuples>
-auto tuple_cat(Tuples&&... tuples) {
+constexpr auto tuple_cat(Tuples&&... tuples) {
   constexpr std::size_t N = tuple_cat_size_v<Tuples...>;
   return tuple_cat_impl(std::make_index_sequence<N>{}, std::forward<Tuples>(tuples)...);
 }
