@@ -179,6 +179,15 @@ consteval auto getTests() {
                   std::define_static_array(std::meta::template_arguments_of(member));
               constexpr auto args_per_batch = template_parameters.size();
               num_parameterizations = total_args / args_per_batch;
+            } else if constexpr (t2 == ^^ParameterizeMatrix) {
+              constexpr auto parameterize_matrix = std::meta::extract<
+                  typename[:std::meta::substitute(
+                                ^^ParameterizeMatrix,
+                                std::define_static_array(std::meta::template_arguments_of(
+                                    std::meta::type_of(a2)))):]>(a2);
+              parameterized = true;
+
+              num_parameterizations = parameterize_matrix.sets.getSizeof();
             }
           }
           tests.emplace_back(member, m, final_test_name, test_info.disabled, parameterized,
