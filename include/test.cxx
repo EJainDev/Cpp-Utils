@@ -84,21 +84,11 @@ struct Pair {
   static constexpr auto Init(Values... values) {
     return InitI<Tuple<Values...>>{.params = Tuple{values...}};
   }
-
-  template <typename... ValueTuples>
-  static constexpr auto InitM(ValueTuples... values) {
-    return Tuple{InitI<ValueTuples>{.params = values}...};
-  }
 };
 
 export template <typename... Pairs>
 consteval auto makeParameterizationMatrix(Pairs... pairs) {
   return ParameterizeMatrix<Pairs...>{.sets = Tuple{pairs...}};
-}
-
-export template <typename... PairTuples>
-consteval auto makeTParamMatrix(PairTuples... pair_tuples) {
-  return ParameterizeMatrix{.sets = combine(pair_tuples...)};
 }
 
 export template <int N>

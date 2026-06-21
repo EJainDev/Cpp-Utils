@@ -67,19 +67,4 @@ template <typename... Ts>
 Tuple(Ts...) -> Tuple<Ts...>;
 
 export consteval auto tuple(auto... args) { return Tuple<decltype(args)...>{.s = {args...}}; }
-
-template <typename T, std::size_t... Is>
-constexpr auto unpack_tuple(T&& tuple, std::index_sequence<Is...>) {
-  using TupleType = std::remove_cvref_t<T>;
-
-  return Tuple{tuple.s.[:TupleType::nsdms[Is]:]...};
-}
-
-template <typename... Tuples>
-constexpr auto combine(Tuples&&... tuples) {
-  return []<typename... Ts>(Ts&&... values) {
-    return Tuple{std::forward<Ts>(values)...};
-  }(unpack_tuple(std::forward<Tuples>(tuples),
-                 std::make_index_sequence<std::remove_cvref_t<Tuples>::getSizeof()>{})...);
-}
 }  // namespace annotest
