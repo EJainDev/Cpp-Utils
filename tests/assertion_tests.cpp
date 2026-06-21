@@ -46,6 +46,10 @@ struct AssertionTestSuite {
   ]] void AssertNotEqual(A a, B b) {
     assertNotEqual(a, b);
   }
+
+  [[= Test{}]] void AssertTrue() { assertTrue(true); }
+
+  [[= Test{}]] void AssertFalse() { assertFalse(false); }
 };
 
 int main(int argc, char** argv) { return test<AssertionTestSuite>(argc, argv); }

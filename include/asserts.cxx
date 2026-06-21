@@ -34,7 +34,7 @@ export void assertFalse(auto value) {
 }
 
 export template <typename T, typename U, typename K = std::common_type_t<T, U>>
-void assertNear(T expected, U actual, K tol = static_cast<K>(0.001)) {
+void assertNear(T expected, U actual, K tol{0.001}) {
   if (!(std::abs(expected - actual) <= tol)) {
     throw Error("Assertion failed: expected " + format(expected) + " ≈ " + format(actual) +
                 " within " + format(tol));
